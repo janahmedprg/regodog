@@ -4,17 +4,22 @@ body {
 }
 
 .container {
-  max-width: 1600px;
+  display: flex;
+  flex-direction: column;
+  max-width: 1200px;
   background: white;
   padding: 20px;
   margin: 50px auto;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   border: 1px solid #ccc;
   border-radius: 50px;
+  justify-content: center;
+  align-items: center;
 }
 
 .header {
   text-align: left;
+  width: 90%;
 }
 
 .title {
@@ -29,9 +34,10 @@ body {
 
 .nav {
   display: flex;
-  gap: 15px;
+  justify-content: space-between;
   margin-top: 10px;
   font-weight: bold;
+  padding: 0 10px;
 }
 
 .nav span {
@@ -44,6 +50,7 @@ body {
 
 .news-feed {
   margin-top: 20px;
+  width: 80%;
 }
 
 .news-header {
@@ -77,26 +84,49 @@ body {
   cursor: pointer;
 }
 
-.auth-container {
-  text-align: center;
-  margin-top: 20px;
-}
-
 .auth-button {
   background-color: #4285f4;
   color: white;
-  padding: 10px 15px;
+  padding: 3px 10px;
+  margin-top: -3px;
   border: none;
   border-radius: 5px;
   cursor: pointer;
-  font-size: 14px;
+  text-decoration: none;
 }
 
 .auth-button:hover {
   background-color: #357ae8;
 }
 
-.user-info {
+.auth-container {
   text-align: center;
+  margin-top: 20px;
+  width: 400px;
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
   margin-top: 10px;
+}
+
+.auth-form input {
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+.auth-button.signup {
+  background-color: #34a853;
+}
+
+.auth-button.signup:hover {
+  background-color: #2c8c41;
+}
+
+.error-text {
+  color: red;
+  margin-top: 5px;
 }

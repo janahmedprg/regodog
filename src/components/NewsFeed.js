@@ -1,34 +1,93 @@
-import React from "react";
+// src/NewsFeed.js
+import React, { useEffect, useState } from "react";
+import { auth, db, collection, getDocs, addDoc } from "../config/firebase.js";
+import { onAuthStateChanged } from "firebase/auth";
 
 const NewsItem = ({ title, content, link, button }) => (
   <div className="news-item">
     <p className="news-title">{title}</p>
     <p className="news-content">{content}</p>
-    {link && <p className="news-link">{link}</p>}
     {button && <button className="news-button">{button}</button>}
   </div>
 );
 
-const NewsFeed = () => (
-  <div className="news-feed">
-    <h2 className="news-header">NEWS FEED</h2>
-    <NewsItem 
-      title="1/28/2025 AKC Meet the Breeds" 
-      content="I had so many awesome talks with the AKC Meet the Breeds visitors who commented on Blueberry’s and Valegro’s collars - love NYC, nothing you can’t find here! Have you seen these before?" 
-      link="{LINK to STANDARD SCHNAUZER}"
-      button="Read the Article"
-    />
-    <NewsItem 
-      title="1/28/2025 Czech green pea soup anyone?" 
-      content="I had so many awesome talks with the AKC Meet the Breeds visitors who commented on Blueberry’s and Valegro’s collars - love NYC, nothing you can’t find here! Have you seen these before?" 
-      link="[LINK to THE CZECH RESTAURANT]"
-    />
-    <NewsItem 
-      title="1/28/2025 The question: What are we going to cook today?" 
-      content="Does your mom also ask you for cooking ideas? Do you also run out of lunch or dinner ideas?" 
-      link="[LINK to THE CZECH RESTAURANT]"
-    />
-  </div>
-);
+const NewsFeed = () => {
+  const [newsItems, setNewsItems] = useState([]);
+  const [newNews, setNewNews] = useState({ title: "", content: "" });
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  // Fetch news items from Firebase
+  useEffect(() => {
+    const fetchNewsItems = async () => {
+      const querySnapshot = await getDocs(collection(db, "news"));
+      const items = querySnapshot.docs.map((doc) => doc.data());
+      setNewsItems(items);
+    };
+
+    fetchNewsItems();
+
+    // Check if user is an admin
+    onAuthStateChanged(auth, (user) => {
+      if (user && user.uid === process.env.REACT_APP_FIREBASE_ADMIN_USER_ID) {
+        setIsAdmin(true);
+      } else {
+        setIsAdmin(false);
+      }
+    });
+  }, []);
+
+  // Handle form submission to post new news
+  const handlePostNews = async (e) => {
+    e.preventDefault();
+    if (newNews.title && newNews.content) {
+      try {
+        await addDoc(collection(db, "news"), {
+          title: newNews.title,
+          content: newNews.content,
+          timestamp: new Date(),
+        });
+        setNewNews({ title: "", content: "" });
+      } catch (err) {
+        console.error("Error adding news item: ", err);
+      }
+    }
+  };
+
+  return (
+    <div className="news-feed">
+      <h2 className="news-header">NEWS FEED</h2>
+
+      {/* Display NewsItems from Firebase */}
+      {newsItems.map((item, index) => (
+        <NewsItem
+          key={index}
+          title={item.title}
+          content={item.content}
+          button="Read the Article"
+        />
+      ))}
+
+      {/* If the user is an admin, show form to post new news */}
+      {isAdmin && (
+        <form onSubmit={handlePostNews} className="news-post-form">
+          <input
+            type="text"
+            placeholder="Title"
+            value={newNews.title}
+            onChange={(e) => setNewNews({ ...newNews, title: e.target.value })}
+          />
+          <textarea
+            placeholder="Content"
+            value={newNews.content}
+            onChange={(e) =>
+              setNewNews({ ...newNews, content: e.target.value })
+            }
+          />
+          <button type="submit">Post News</button>
+        </form>
+      )}
+    </div>
+  );
+};
 
 export default NewsFeed;
