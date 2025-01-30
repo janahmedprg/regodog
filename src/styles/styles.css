@@ -1,0 +1,102 @@
+body {
+  background-color: #b0c4ecdc;
+  font-family: Arial, sans-serif;
+}
+
+.container {
+  max-width: 1600px;
+  background: white;
+  padding: 20px;
+  margin: 50px auto;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  border: 1px solid #ccc;
+  border-radius: 50px;
+}
+
+.header {
+  text-align: left;
+}
+
+.title {
+  font-size: 24px;
+  font-weight: bold;
+}
+
+.separator {
+  border-bottom: 2px solid black;
+  margin-top: 5px;
+}
+
+.nav {
+  display: flex;
+  gap: 15px;
+  margin-top: 10px;
+  font-weight: bold;
+}
+
+.nav span {
+  color: black;
+}
+
+.nav .disabled {
+  color: gray;
+}
+
+.news-feed {
+  margin-top: 20px;
+}
+
+.news-header {
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.news-item {
+  margin-top: 20px;
+}
+
+.news-title {
+  font-weight: bold;
+}
+
+.news-content {
+  margin-top: 5px;
+}
+
+.news-link {
+  color: blue;
+  margin-top: 5px;
+}
+
+.news-button {
+  display: inline-block;
+  background: #ccc;
+  padding: 5px 10px;
+  margin-top: 5px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.auth-container {
+  text-align: center;
+  margin-top: 20px;
+}
+
+.auth-button {
+  background-color: #4285f4;
+  color: white;
+  padding: 10px 15px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.auth-button:hover {
+  background-color: #357ae8;
+}
+
+.user-info {
+  text-align: center;
+  margin-top: 10px;
+}
