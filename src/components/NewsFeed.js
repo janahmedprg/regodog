@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { auth, db, collection, getDocs, addDoc } from "../config/firebase.js";
 import { onAuthStateChanged } from "firebase/auth";
+// import Ad from "./Ad";
 
 const NewsItem = ({ title, content, link, button }) => (
   <div className="news-item">
@@ -66,6 +67,7 @@ const NewsFeed = () => {
           button="Read the Article"
         />
       ))}
+      {/* <Ad></Ad> */}
 
       {/* If the user is an admin, show form to post new news */}
       {isAdmin && (

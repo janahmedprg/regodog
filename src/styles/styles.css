@@ -130,3 +130,7 @@ body {
   color: red;
   margin-top: 5px;
 }
+
+.ad-container {
+  margin-top: 50px; /* Space above the ad */
+}
