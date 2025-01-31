@@ -27,12 +27,26 @@ const NewsFeed = () => {
 
     fetchNewsItems();
 
-    // Check if user is an admin
-    onAuthStateChanged(auth, (user) => {
-      if (user && user.uid === process.env.REACT_APP_FIREBASE_ADMIN_USER_ID) {
-        setIsAdmin(true);
+    const checkIfAdmin = async (userId) => {
+      try {
+        const querySnapshot = await getDocs(collection(db, "check-admin"));
+        const isAdmin = querySnapshot.docs.some(
+          (doc) => doc.data().id === userId
+        );
+        console.log(isAdmin);
+        return isAdmin;
+      } catch (error) {
+        console.error("Error checking admin status:", error);
+        return false;
+      }
+    };
+
+    onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        const isAdmin = await checkIfAdmin(user.uid);
+        setIsAdmin(isAdmin);
       } else {
-        setIsAdmin(false);
+        setIsAdmin(false); // User is not logged in
       }
     });
   }, []);
