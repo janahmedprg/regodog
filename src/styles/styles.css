@@ -134,3 +134,33 @@ body {
 .ad-container {
   margin-top: 50px; /* Space above the ad */
 }
+
+.article-container {
+  max-width: 800px;
+  margin: 40px auto;
+  padding: 20px;
+  background: #f9f9f9;
+  border-radius: 10px;
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.article-title {
+  font-size: 28px;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 15px;
+}
+
+.article-content {
+  font-size: 18px;
+  line-height: 1.6;
+  color: #444;
+}
+
+.loading,
+.error {
+  text-align: center;
+  font-size: 20px;
+  color: #666;
+  margin-top: 50px;
+}
