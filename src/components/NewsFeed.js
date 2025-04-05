@@ -61,24 +61,26 @@ const NewsItem = ({
     // Update the NewsItem component in NewsFeed.js to include this structure:
     <div className="news-item">
       {isEditing ? (
-        <div className="edit-form">
+        <div className="edit-mode">
           <input
             type="text"
             value={editedTitle}
             onChange={(e) => setEditedTitle(e.target.value)}
             className="edit-input"
+            placeholder="Article Title"
           />
           <textarea
             value={editedContent}
             onChange={(e) => setEditedContent(e.target.value)}
             className="edit-textarea"
+            placeholder="Write your article content here..."
           />
           <div className="edit-buttons">
-            <button onClick={handleSave} className="save-button">
-              Save
+            <button onClick={handleSave} className="edit-save-button">
+              Save Changes
             </button>
-            <button onClick={handleCancel} className="cancel-button">
-              Cancel
+            <button onClick={handleCancel} className="edit-cancel-button">
+              Discard Changes
             </button>
           </div>
         </div>
