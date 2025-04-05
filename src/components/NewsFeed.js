@@ -58,26 +58,35 @@ const NewsItem = ({
   };
 
   return (
+    // Update the NewsItem component in NewsFeed.js to include this structure:
     <div className="news-item">
       {isEditing ? (
-        <>
+        <div className="edit-form">
           <input
             type="text"
             value={editedTitle}
             onChange={(e) => setEditedTitle(e.target.value)}
+            className="edit-input"
           />
           <textarea
             value={editedContent}
             onChange={(e) => setEditedContent(e.target.value)}
+            className="edit-textarea"
           />
-          <button onClick={handleSave}>Save</button>
-          <button onClick={handleCancel}>Cancel</button>
-        </>
+          <div className="edit-buttons">
+            <button onClick={handleSave} className="save-button">
+              Save
+            </button>
+            <button onClick={handleCancel} className="cancel-button">
+              Cancel
+            </button>
+          </div>
+        </div>
       ) : (
         <>
           <p className="news-title">{title}</p>
           <p className="news-content">
-            {content.length > 300 ? `${content.substring(0, 300)}...` : content}
+            {content.length > 200 ? `${content.substring(0, 200)}...` : content}
           </p>
           {button && (
             <button className="news-button" onClick={handleReadArticle}>
@@ -200,22 +209,23 @@ const NewsFeed = () => {
       <h2 className="news-header">NEWS FEED</h2>
 
       {/* Display NewsItems from Firebase */}
-      {newsItems.map((item, index) => (
-        <NewsItem
-          key={index}
-          id={item.id} // Pass the document ID for editing
-          title={item.title}
-          content={item.content}
-          link={item.id} // Pass the article ID for redirection
-          button="Read the Article"
-          isAdmin={isAdmin}
-          onEdit={handleEdit}
-          onRemove={handleRemove}
-        />
-      ))}
-      {/* <Ad></Ad> */}
+      <div className="news-list">
+        {newsItems.map((item, index) => (
+          <NewsItem
+            key={index}
+            id={item.id}
+            title={item.title}
+            content={item.content}
+            link={item.id}
+            button="Read the Article"
+            isAdmin={isAdmin}
+            onEdit={handleEdit}
+            onRemove={handleRemove}
+          />
+        ))}
+      </div>
 
-      {/* If the user is an admin, show form to post new news */}
+      {/* Admin form */}
       {isAdmin && (
         <form onSubmit={handlePostNews} className="news-post-form">
           <input
@@ -223,6 +233,7 @@ const NewsFeed = () => {
             placeholder="Title"
             value={newNews.title}
             onChange={(e) => setNewNews({ ...newNews, title: e.target.value })}
+            className="form-input"
           />
           <textarea
             placeholder="Content"
@@ -230,8 +241,11 @@ const NewsFeed = () => {
             onChange={(e) =>
               setNewNews({ ...newNews, content: e.target.value })
             }
+            className="form-textarea"
           />
-          <button type="submit">Post News</button>
+          <button type="submit" className="form-submit">
+            Post News
+          </button>
         </form>
       )}
     </div>

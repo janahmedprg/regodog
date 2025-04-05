@@ -17,11 +17,12 @@ const Header = () => {
 
   const handleSignOut = async () => {
     await signOut(auth);
-    navigate("/auth"); // Redirect to auth page after signing out
+    navigate("/auth");
   };
+
   return (
-    <div className="header">
-      <Link to="/" style={{ textDecoration: "none", color: "black" }}>
+    <header className="header">
+      <Link to="/" style={{ textDecoration: "none", color: "inherit" }}>
         <h1 className="title">REGODOG</h1>
       </Link>
       <div className="separator"></div>
@@ -41,7 +42,8 @@ const Header = () => {
           </Link>
         )}
       </nav>
-    </div>
+    </header>
   );
 };
+
 export default Header;
