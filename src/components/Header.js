@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { auth } from "../config/firebase";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import "../styles/styles.css";
+import logo from "../logo.svg";
 
 const Header = () => {
   const [user, setUser] = useState(null);
@@ -22,8 +23,10 @@ const Header = () => {
 
   return (
     <header className="header">
-      <Link to="/" style={{ textDecoration: "none", color: "inherit" }}>
-        <h1 className="title">REGODOG</h1>
+      <Link to="/" style={{ textDecoration: "none" }}>
+        <div className="logo-container">
+          <img src={logo} alt="REGODOG Logo" className="logo" />
+        </div>
       </Link>
       <div className="separator"></div>
       <nav className="nav">

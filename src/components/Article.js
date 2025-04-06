@@ -11,6 +11,7 @@ import {
 } from "../config/firebase"; // Import Firestore utilities
 import { onAuthStateChanged } from "firebase/auth";
 import "../styles/styles.css"; // Import CSS for styling
+import Editor from "./Editor";
 
 const Article = () => {
   const { id } = useParams(); // Get article ID from URL
@@ -20,6 +21,7 @@ const Article = () => {
   const [isEditing, setIsEditing] = useState(false); // State to toggle edit mode
   const [editedTitle, setEditedTitle] = useState(""); // State for edited title
   const [editedContent, setEditedContent] = useState(""); // State for edited content
+  const [editorContent, setEditorContent] = useState(null);
 
   // Fetch article data
   useEffect(() => {
@@ -31,6 +33,7 @@ const Article = () => {
           setArticle(docSnap.data());
           setEditedTitle(docSnap.data().title); // Initialize edited title
           setEditedContent(docSnap.data().content); // Initialize edited content
+          setEditorContent(docSnap.data().content);
         } else {
           console.log("No such document!");
         }
@@ -91,6 +94,27 @@ const Article = () => {
     }
   };
 
+  const handleEditorSave = async (editorState, docId, collectionName) => {
+    try {
+      const docRef = doc(db, collectionName, docId);
+
+      await updateDoc(docRef, {
+        title: editedTitle,
+        editorContent: editorState, // Save the structured editor content
+        content: JSON.stringify(editorState), // Optional: keep plain text version
+        lastUpdated: new Date(),
+      });
+
+      setArticle((prev) => ({
+        ...prev,
+        title: editedTitle,
+        editorContent: editorState,
+      }));
+    } catch (error) {
+      console.error("Error saving content:", error);
+    }
+  };
+
   // Handle cancel button click
   const handleCancel = () => {
     setIsEditing(false); // Disable edit mode
@@ -132,6 +156,10 @@ const Article = () => {
               Discard Changes
             </button>
           </div>
+          {/* <Editor
+            initialEditorState={editorContent}
+            onSave={(content) => handleEditorSave(content, id, "news")}
+          /> */}
         </div>
       ) : (
         // View mode

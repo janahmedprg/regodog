@@ -6,6 +6,7 @@ import Auth from "./components/Auth";
 import Article from "./components/Article"; // Added Article component
 import "./styles/styles.css";
 import FeaturedPostsSidebar from "./components/FeaturedPostsSidebar";
+import Footer from "./components/Footer";
 
 const Layout = () => {
   return (
@@ -31,6 +32,7 @@ const App = () => {
           <Route path="/article/:id" element={<Article />} />{" "}
           {/* Added Article Route */}
         </Routes>
+        <Footer />
       </div>
     </Router>
   );

@@ -55,6 +55,7 @@ body {
 /* Container Styles */
 .container {
   max-width: 1200px;
+  min-height: 100vh; 
   margin: 0 auto;
   padding: 0 20px;
 }
@@ -488,4 +489,82 @@ body {
   .content-wrapper {
     padding: 20px;
   }
+}
+
+/* Footer Styles */
+.footer {
+  background-color: #ffffff;
+  border-top: 1px solid #e1e1e1;
+  padding: 40px 20px;
+  margin-top: 60px;
+}
+
+.footer-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.footer-links {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.footer-link {
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #000000;
+  text-decoration: none;
+  margin-bottom: 15px;
+  font-weight: 500;
+}
+
+.footer-nav {
+  display: flex;
+  gap: 20px;
+}
+
+.footer-nav-link {
+  font-size: 27px;
+  color: #333333;
+  text-decoration: none;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  transition: color 0.2s ease;
+}
+
+.footer-nav-link:hover {
+  color: #888888;
+}
+
+.footer-copyright {
+  font-size: 12px;
+  color: #888888;
+  margin-top: 20px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .footer-nav {
+    flex-direction: column;
+    gap: 10px;
+  }
+}
+
+
+.logo-container {
+  display: flex;
+  align-items: center;
+  height: 100px; /* Adjust based on your logo's aspect ratio */
+}
+
+.logo {
+  height: 100%;
+  width: auto;
 }
