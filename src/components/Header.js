@@ -30,11 +30,21 @@ const Header = () => {
       </Link>
       <div className="separator"></div>
       <nav className="nav">
-        <span>THE CZECH RESTAURANT</span>
-        <span>STANDARD SCHNAUZER</span>
-        <span>THE FARMHOUSE & FARM</span>
-        <span>ANYTHING</span>
-        <span>THE SHOP</span>
+        <Link to="/czech_restaurant" className="nav-link">
+          THE CZECH RESTAURANT
+        </Link>
+        <Link to="/standard_schnouzer" className="nav-link">
+          STANDARD SCHNAUZER
+        </Link>
+        <Link to="/farm_house" className="nav-link">
+          THE FARMHOUSE & FARM
+        </Link>
+        <Link to="/anything" className="nav-link">
+          ANYTHING
+        </Link>
+        <Link to="/shop" className="nav-link">
+          THE SHOP
+        </Link>
         {user ? (
           <button className="auth-button" onClick={handleSignOut}>
             Sign Out

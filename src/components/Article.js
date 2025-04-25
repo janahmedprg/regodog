@@ -11,17 +11,47 @@ import {
 } from "../config/firebase"; // Import Firestore utilities
 import { onAuthStateChanged } from "firebase/auth";
 import "../styles/styles.css"; // Import CSS for styling
+import "../styles/tags.css";
 import Editor from "./Editor";
+// import { createEditor, $getRoot } from "lexical";
+// import { $createParagraphNode, $createTextNode } from "lexical";
 
 const Article = () => {
+  // Create a default editor state with a paragraph node
+  // const createDefaultEditorState = () => {
+  //   const editor = createEditor();
+  //   let editorState = null;
+  //   editor.update(() => {
+  //     const root = $getRoot();
+  //     const paragraph = $createParagraphNode();
+  //     const text = $createTextNode("Start writing your article...");
+  //     paragraph.append(text);
+  //     root.append(paragraph);
+  //     editorState = editor.getEditorState();
+  //   });
+  //   return editorState;
+  // };
+
   const { id } = useParams(); // Get article ID from URL
   const [article, setArticle] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false); // State to check if the user is an admin
   const [isEditing, setIsEditing] = useState(false); // State to toggle edit mode
   const [editedTitle, setEditedTitle] = useState(""); // State for edited title
-  const [editedContent, setEditedContent] = useState(""); // State for edited content
-  const [editorContent, setEditorContent] = useState(null);
+  const [selectedTags, setSelectedTags] = useState([]);
+
+  const availableTags = [
+    "czech_restaurant",
+    "standard_schnouzer",
+    "farm_house",
+    "anything",
+  ];
+
+  const handleTagChange = (tag) => {
+    setSelectedTags((prev) =>
+      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
+    );
+  };
 
   // Fetch article data
   useEffect(() => {
@@ -30,10 +60,10 @@ const Article = () => {
         const docRef = doc(db, "news", id);
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
-          setArticle(docSnap.data());
-          setEditedTitle(docSnap.data().title); // Initialize edited title
-          setEditedContent(docSnap.data().content); // Initialize edited content
-          setEditorContent(docSnap.data().content);
+          const data = docSnap.data();
+          setArticle(data);
+          setEditedTitle(data.title);
+          setSelectedTags(data.tags || []);
         } else {
           console.log("No such document!");
         }
@@ -75,51 +105,51 @@ const Article = () => {
 
   // Handle edit button click
   const handleEdit = () => {
-    setIsEditing(true); // Enable edit mode
+    setIsEditing(true);
   };
 
   // Handle save button click
-  const handleSave = async () => {
+  const handleSave = async (editorState, htmlContent) => {
+    if (!editorState) {
+      console.error("No editor state to save");
+      return;
+    }
+
     try {
+      const serializedState = JSON.stringify(editorState.toJSON());
+
+      // Update Firebase
       const docRef = doc(db, "news", id);
       await updateDoc(docRef, {
         title: editedTitle,
-        content: editedContent,
-      });
-      setArticle({ ...article, title: editedTitle, content: editedContent }); // Update local state
-      setIsEditing(false); // Disable edit mode
-      console.log("Article updated successfully!");
-    } catch (error) {
-      console.error("Error updating article:", error);
-    }
-  };
-
-  const handleEditorSave = async (editorState, docId, collectionName) => {
-    try {
-      const docRef = doc(db, collectionName, docId);
-
-      await updateDoc(docRef, {
-        title: editedTitle,
-        editorContent: editorState, // Save the structured editor content
-        content: JSON.stringify(editorState), // Optional: keep plain text version
+        editorState: serializedState,
+        htmlContent: htmlContent,
+        tags: selectedTags,
         lastUpdated: new Date(),
       });
 
+      // Update local state
       setArticle((prev) => ({
         ...prev,
         title: editedTitle,
-        editorContent: editorState,
+        editorState: serializedState,
+        htmlContent: htmlContent,
+        tags: selectedTags,
       }));
+
+      setIsEditing(false);
+      console.log("Article updated successfully!");
     } catch (error) {
-      console.error("Error saving content:", error);
+      console.error("Error updating article:", error);
+      alert("Failed to save article. Please try again.");
     }
   };
 
   // Handle cancel button click
   const handleCancel = () => {
-    setIsEditing(false); // Disable edit mode
-    setEditedTitle(article.title); // Reset edited title
-    setEditedContent(article.content); // Reset edited content
+    setIsEditing(false);
+    setEditedTitle(article.title);
+    setSelectedTags(article.tags || []);
   };
 
   if (loading) {
@@ -142,30 +172,53 @@ const Article = () => {
             className="edit-input"
             placeholder="Article Title"
           />
-          <textarea
-            value={editedContent}
-            onChange={(e) => setEditedContent(e.target.value)}
-            className="edit-textarea"
-            placeholder="Write your article content here..."
+          <div className="tags-section">
+            <h3>Select Tags:</h3>
+            <div className="tags-container">
+              {availableTags.map((tag) => (
+                <label key={tag} className="tag-label">
+                  <input
+                    type="checkbox"
+                    checked={selectedTags.includes(tag)}
+                    onChange={() => handleTagChange(tag)}
+                  />
+                  {tag}
+                </label>
+              ))}
+            </div>
+          </div>
+          <Editor
+            initialEditorState={article.editorState}
+            onSave={handleSave}
           />
           <div className="edit-buttons">
-            <button onClick={handleSave} className="edit-save-button">
-              Save Changes
-            </button>
             <button onClick={handleCancel} className="edit-cancel-button">
               Discard Changes
             </button>
           </div>
-          {/* <Editor
-            initialEditorState={editorContent}
-            onSave={(content) => handleEditorSave(content, id, "news")}
-          /> */}
         </div>
       ) : (
         // View mode
         <>
           <h1 className="article-title">{article.title}</h1>
-          <p className="article-content">{article.content}</p>
+          <div className="article-tags">
+            {article.tags &&
+              article.tags.map((tag) => (
+                <span key={tag} className="tag">
+                  {tag}
+                </span>
+              ))}
+          </div>
+          <div className="article-content">
+            {article.htmlContent ? (
+              <div
+                className="article-html-content"
+                dangerouslySetInnerHTML={{ __html: article.htmlContent }}
+              />
+            ) : (
+              <p>{article.content}</p>
+            )}
+          </div>
           {isAdmin && (
             <button onClick={handleEdit} className="edit-button">
               Edit Article

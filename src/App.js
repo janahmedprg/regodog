@@ -1,9 +1,10 @@
 import React from "react";
-import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Header from "./components/Header";
 import NewsFeed from "./components/NewsFeed";
 import Auth from "./components/Auth";
-import Article from "./components/Article"; // Added Article component
+import Article from "./components/Article";
+import CreateArticle from "./components/CreateArticle";
 import "./styles/styles.css";
 import FeaturedPostsSidebar from "./components/FeaturedPostsSidebar";
 import Footer from "./components/Footer";
@@ -29,8 +30,18 @@ const App = () => {
         <Routes>
           <Route path="/" element={<Layout />} />
           <Route path="/auth" element={<Auth />} />
-          <Route path="/article/:id" element={<Article />} />{" "}
-          {/* Added Article Route */}
+          <Route path="/article/:id" element={<Article />} />
+          <Route path="/create" element={<CreateArticle />} />
+          <Route
+            path="/czech_restaurant"
+            element={<NewsFeed tag="czech_restaurant" />}
+          />
+          <Route
+            path="/standard_schnouzer"
+            element={<NewsFeed tag="standard_schnouzer" />}
+          />
+          <Route path="/farm_house" element={<NewsFeed tag="farm_house" />} />
+          <Route path="/anything" element={<NewsFeed tag="anything" />} />
         </Routes>
         <Footer />
       </div>

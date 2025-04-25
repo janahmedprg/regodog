@@ -10,7 +10,10 @@ import {
   doc,
   deleteDoc,
   getDoc,
+  query,
+  where,
 } from "firebase/firestore";
+import { getStorage } from "firebase/storage";
 // import { getAnalytics } from "firebase/analytics";
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
@@ -32,6 +35,7 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const provider = new GoogleAuthProvider();
 const db = getFirestore(app);
+const storage = getStorage(app);
 
 export {
   auth,
@@ -44,5 +48,8 @@ export {
   updateDoc,
   deleteDoc,
   getDoc,
+  storage,
+  query,
+  where,
 };
 // const analytics = getAnalytics(app);
