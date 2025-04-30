@@ -7,6 +7,10 @@ import {
   FORMAT_TEXT_COMMAND,
   $createTextNode,
 } from "lexical";
+import { $createHeadingNode } from "@lexical/rich-text";
+import { $createQuoteNode } from "@lexical/rich-text";
+import { $createListNode } from "@lexical/list";
+import { $createCodeNode } from "@lexical/code";
 import { $createLinkNode } from "@lexical/link";
 import { storage } from "../../config/firebase";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
@@ -89,11 +93,11 @@ function ToolbarPlugin() {
           img.style.maxWidth = "100%";
           img.style.height = "auto";
 
-          // Insert the image into the editor
-          const imageNode = $createTextNode("");
-          imageNode.setFormat("image");
-          imageNode.setDetail({ src: downloadURL, alt: file.name });
-          paragraph.append(imageNode);
+          // Insert the image into the DOM
+          const domElement = selection.anchor.getNode().getParentElement();
+          if (domElement) {
+            domElement.appendChild(img);
+          }
 
           selection.insertNodes([paragraph]);
         }

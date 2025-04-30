@@ -37,7 +37,7 @@ const NewsItem = ({
   const [selectedTags, setSelectedTags] = useState(tags || []);
 
   const availableTags = [
-    "czech_restaurant",
+    "bakery",
     "standard_schnouzer",
     "farm_house",
     "anything",
@@ -47,6 +47,22 @@ const NewsItem = ({
     setSelectedTags((prev) =>
       prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
     );
+  };
+
+  const truncateText = (text, wordLimit) => {
+    if (!text) return "";
+    const words = text.split(/\s+/);
+    if (words.length <= wordLimit) return text;
+    return words.slice(0, wordLimit).join(" ") + "...";
+  };
+
+  const truncateHtmlContent = (html) => {
+    if (!html) return "";
+    // Create a temporary div to parse HTML
+    const tempDiv = document.createElement("div");
+    tempDiv.innerHTML = html;
+    const text = tempDiv.textContent || tempDiv.innerText;
+    return truncateText(text, 20);
   };
 
   // Function to handle "Read the Article" button click
@@ -137,9 +153,9 @@ const NewsItem = ({
           </div>
           <div className="news-content">
             {htmlContent ? (
-              <div dangerouslySetInnerHTML={{ __html: htmlContent }} />
+              <div>{truncateHtmlContent(htmlContent)}</div>
             ) : (
-              <p>{content}</p>
+              <p>{truncateText(content, 20)}</p>
             )}
           </div>
           {button && (
@@ -172,7 +188,7 @@ const NewsFeed = ({ tag }) => {
   const navigate = useNavigate();
 
   const availableTags = [
-    "czech_restaurant",
+    "bakery",
     "standard_schnouzer",
     "farm_house",
     "anything",

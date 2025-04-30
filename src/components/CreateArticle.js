@@ -13,7 +13,7 @@ const CreateArticle = () => {
   const navigate = useNavigate();
 
   const availableTags = [
-    "czech_restaurant",
+    "bakery",
     "standard_schnouzer",
     "farm_house",
     "anything",

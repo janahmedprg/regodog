@@ -30,8 +30,8 @@ const Header = () => {
       </Link>
       <div className="separator"></div>
       <nav className="nav">
-        <Link to="/czech_restaurant" className="nav-link">
-          THE CZECH RESTAURANT
+        <Link to="/bakery" className="nav-link">
+          BAKERY
         </Link>
         <Link to="/standard_schnouzer" className="nav-link">
           STANDARD SCHNAUZER

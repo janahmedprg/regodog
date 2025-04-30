@@ -41,7 +41,7 @@ const Article = () => {
   const [selectedTags, setSelectedTags] = useState([]);
 
   const availableTags = [
-    "czech_restaurant",
+    "bakery",
     "standard_schnouzer",
     "farm_house",
     "anything",

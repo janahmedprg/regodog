@@ -32,10 +32,7 @@ const App = () => {
           <Route path="/auth" element={<Auth />} />
           <Route path="/article/:id" element={<Article />} />
           <Route path="/create" element={<CreateArticle />} />
-          <Route
-            path="/czech_restaurant"
-            element={<NewsFeed tag="czech_restaurant" />}
-          />
+          <Route path="/bakery" element={<NewsFeed tag="bakery" />} />
           <Route
             path="/standard_schnouzer"
             element={<NewsFeed tag="standard_schnouzer" />}
