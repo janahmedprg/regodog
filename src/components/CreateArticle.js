@@ -36,7 +36,7 @@ const CreateArticle = () => {
     try {
       // Get HTML content from editor state
       let htmlContent = "";
-      const serializedState = JSON.stringify(editorState.toJSON());
+      const serializedState = editorState;
 
       editorState.read(() => {
         const root = editorState._nodeMap.get("root");

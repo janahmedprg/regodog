@@ -257,7 +257,7 @@ const NewsFeed = ({ tag }) => {
     }
 
     try {
-      const serializedState = JSON.stringify(editorState.toJSON());
+      const serializedState = editorState;
 
       // Create new article in Firebase
       const docRef = await addDoc(collection(db, "news"), {
@@ -290,7 +290,7 @@ const NewsFeed = ({ tag }) => {
   ) => {
     try {
       const newsDocRef = doc(db, "news", id);
-      const serializedState = JSON.stringify(editorState.toJSON());
+      const serializedState = editorState;
       await updateDoc(newsDocRef, {
         title: newTitle,
         editorState: serializedState,
