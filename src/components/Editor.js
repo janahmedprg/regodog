@@ -14,16 +14,27 @@ import { ListPlugin } from "@lexical/react/LexicalListPlugin";
 import { MarkdownShortcutPlugin } from "@lexical/react/LexicalMarkdownShortcutPlugin";
 import { TRANSFORMERS } from "@lexical/markdown";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
-import { $generateHtmlFromNodes } from "@lexical/html";
+import { $generateHtmlFromNodes, $generateNodesFromDOM } from "@lexical/html";
+import { createHeadlessEditor } from "@lexical/headless";
 import {
   $getSelection,
   $isRangeSelection,
   $createParagraphNode,
+  FORMAT_TEXT_COMMAND,
+  FORMAT_ELEMENT_COMMAND,
+  UNDO_COMMAND,
+  REDO_COMMAND,
+  SELECTION_CHANGE_COMMAND,
+  COMMAND_PRIORITY_CRITICAL,
+  $getRoot,
 } from "lexical";
 import { $createHeadingNode, $createQuoteNode } from "@lexical/rich-text";
 import { $createListNode } from "@lexical/list";
 import { $createCodeNode } from "@lexical/code";
+import { $createLinkNode } from "@lexical/link";
 import ToolbarPlugin from "./plugins/ToolbarPlugin";
+import ImagePlugin from "./plugins/ImagePlugin";
+import { ImageNode } from "./nodes/ImageNode";
 import "./Editor.css";
 
 const theme = {
@@ -57,6 +68,11 @@ const theme = {
     underlineStrikethrough: "editor-text-underlineStrikethrough",
     code: "editor-text-code",
   },
+  table: "editor-table",
+  tableCell: "editor-table-cell",
+  tableCellHeader: "editor-table-cell-header",
+  tableRow: "editor-table-row",
+  image: "editor-image",
 };
 
 function Placeholder() {
@@ -80,7 +96,7 @@ function EditorPlugin() {
         });
         return true;
       },
-      0
+      COMMAND_PRIORITY_CRITICAL
     );
 
     editor.registerCommand(
@@ -95,7 +111,7 @@ function EditorPlugin() {
         });
         return true;
       },
-      0
+      COMMAND_PRIORITY_CRITICAL
     );
 
     editor.registerCommand(
@@ -110,7 +126,7 @@ function EditorPlugin() {
         });
         return true;
       },
-      0
+      COMMAND_PRIORITY_CRITICAL
     );
 
     editor.registerCommand(
@@ -125,7 +141,7 @@ function EditorPlugin() {
         });
         return true;
       },
-      0
+      COMMAND_PRIORITY_CRITICAL
     );
 
     editor.registerCommand(
@@ -140,7 +156,26 @@ function EditorPlugin() {
         });
         return true;
       },
-      0
+      COMMAND_PRIORITY_CRITICAL
+    );
+
+    // Register keyboard shortcuts
+    editor.registerCommand(
+      UNDO_COMMAND,
+      () => {
+        editor.dispatchCommand(UNDO_COMMAND);
+        return true;
+      },
+      COMMAND_PRIORITY_CRITICAL
+    );
+
+    editor.registerCommand(
+      REDO_COMMAND,
+      () => {
+        editor.dispatchCommand(REDO_COMMAND);
+        return true;
+      },
+      COMMAND_PRIORITY_CRITICAL
     );
   }, [editor]);
 
@@ -166,6 +201,7 @@ const Editor = ({ initialEditorState, onSave }) => {
       TableRowNode,
       AutoLinkNode,
       LinkNode,
+      ImageNode,
     ],
     editorState: initialEditorState,
   };
@@ -178,6 +214,9 @@ const Editor = ({ initialEditorState, onSave }) => {
           <RichTextPlugin
             contentEditable={<ContentEditable className="editor-input" />}
             placeholder={<Placeholder />}
+            ErrorBoundary={({ children }) => (
+              <div className="editor-error-boundary">{children}</div>
+            )}
           />
           <HistoryPlugin />
           <AutoFocusPlugin />
@@ -185,6 +224,7 @@ const Editor = ({ initialEditorState, onSave }) => {
           <ListPlugin />
           <MarkdownShortcutPlugin transformers={TRANSFORMERS} />
           <EditorPlugin />
+          <ImagePlugin />
         </div>
         <div className="editor-footer">
           <SaveButton onSave={onSave} />
@@ -202,11 +242,17 @@ function SaveButton({ onSave }) {
       editor.update(() => {
         try {
           const editorState = editor.getEditorState();
-          const htmlContent = $generateHtmlFromNodes(editor);
-          onSave(editorState, htmlContent);
+          const editorStateJSON = JSON.stringify(editorState);
+
+          // Generate HTML directly from the current editor state
+          const htmlContent = editorState.read(() => {
+            return $generateHtmlFromNodes(editor);
+          });
+
+          onSave(editorStateJSON, htmlContent);
         } catch (error) {
           console.error("Error generating HTML:", error);
-          onSave(editor.getEditorState(), "");
+          onSave(JSON.stringify(editor.getEditorState()), "");
         }
       });
     }

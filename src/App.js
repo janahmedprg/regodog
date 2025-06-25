@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Header from "./components/Header";
 import NewsFeed from "./components/NewsFeed";
@@ -8,8 +8,17 @@ import CreateArticle from "./components/CreateArticle";
 import "./styles/styles.css";
 import FeaturedPostsSidebar from "./components/FeaturedPostsSidebar";
 import Footer from "./components/Footer";
+import Editor from "./components/Editor";
 
 const Layout = () => {
+  const [editorState, setEditorState] = useState(null);
+  const [htmlContent, setHtmlContent] = useState("");
+
+  const handleSave = (newEditorState, newHtmlContent) => {
+    setEditorState(newEditorState);
+    setHtmlContent(newHtmlContent);
+  };
+
   return (
     <div className="app-container">
       <div className="main-content-container">

@@ -116,7 +116,8 @@ const Article = () => {
     }
 
     try {
-      const serializedState = JSON.stringify(editorState.toJSON());
+      // The editorState is already serialized as a JSON string from the Editor component
+      const serializedState = editorState;
 
       // Update Firebase
       const docRef = doc(db, "news", id);
@@ -214,6 +215,7 @@ const Article = () => {
               <div
                 className="article-html-content"
                 dangerouslySetInnerHTML={{ __html: article.htmlContent }}
+                style={{ maxWidth: "100%", overflow: "hidden" }}
               />
             ) : (
               <p>{article.content}</p>
