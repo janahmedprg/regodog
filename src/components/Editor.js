@@ -14,26 +14,21 @@ import { ListPlugin } from "@lexical/react/LexicalListPlugin";
 import { MarkdownShortcutPlugin } from "@lexical/react/LexicalMarkdownShortcutPlugin";
 import { TRANSFORMERS } from "@lexical/markdown";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
-import { $generateHtmlFromNodes, $generateNodesFromDOM } from "@lexical/html";
-import { createHeadlessEditor } from "@lexical/headless";
+import { $generateHtmlFromNodes } from "@lexical/html";
 import {
   $getSelection,
   $isRangeSelection,
   $createParagraphNode,
-  FORMAT_TEXT_COMMAND,
-  FORMAT_ELEMENT_COMMAND,
   UNDO_COMMAND,
   REDO_COMMAND,
-  SELECTION_CHANGE_COMMAND,
   COMMAND_PRIORITY_CRITICAL,
-  $getRoot,
 } from "lexical";
 import { $createHeadingNode, $createQuoteNode } from "@lexical/rich-text";
 import { $createListNode } from "@lexical/list";
 import { $createCodeNode } from "@lexical/code";
-import { $createLinkNode } from "@lexical/link";
 import ToolbarPlugin from "./plugins/ToolbarPlugin";
 import ImagePlugin from "./plugins/ImagePlugin";
+import ImageSelectionPlugin from "./plugins/ImageSelectionPlugin";
 import { ImageNode } from "./nodes/ImageNode";
 import "./Editor.css";
 
@@ -225,6 +220,7 @@ const Editor = ({ initialEditorState, onSave }) => {
           <MarkdownShortcutPlugin transformers={TRANSFORMERS} />
           <EditorPlugin />
           <ImagePlugin />
+          <ImageSelectionPlugin />
         </div>
         <div className="editor-footer">
           <SaveButton onSave={onSave} />

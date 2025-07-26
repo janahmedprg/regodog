@@ -1,5 +1,7 @@
 import { DecoratorNode } from "lexical";
 import React from "react";
+import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
+import ResizableImage from "./ResizableImage";
 
 export class ImageNode extends DecoratorNode {
   __src;
@@ -42,11 +44,22 @@ export class ImageNode extends DecoratorNode {
     const element = document.createElement("img");
     element.setAttribute("src", this.__src);
     element.setAttribute("alt", this.__altText);
-    if (this.__width) {
-      element.setAttribute("width", this.__width);
+
+    // Get the current dimensions (either from node or stored values)
+    const currentWidth =
+      window.imageDimensions && window.imageDimensions[this.getKey()]
+        ? window.imageDimensions[this.getKey()].width
+        : this.__width;
+    const currentHeight =
+      window.imageDimensions && window.imageDimensions[this.getKey()]
+        ? window.imageDimensions[this.getKey()].height
+        : this.__height;
+
+    if (currentWidth) {
+      element.setAttribute("width", currentWidth);
     }
-    if (this.__height) {
-      element.setAttribute("height", this.__height);
+    if (currentHeight) {
+      element.setAttribute("height", currentHeight);
     }
     if (this.__maxWidth) {
       element.style.maxWidth = this.__maxWidth;
@@ -66,20 +79,16 @@ export class ImageNode extends DecoratorNode {
     return this.__altText;
   }
 
+  setWidth(width) {
+    this.__width = width;
+  }
+
+  setHeight(height) {
+    this.__height = height;
+  }
+
   decorate() {
-    return (
-      <div className="image-container">
-        <img
-          src={this.__src}
-          alt={this.__altText}
-          style={{
-            height: this.__height,
-            maxWidth: this.__maxWidth,
-            width: this.__width,
-          }}
-        />
-      </div>
-    );
+    return <ImageComponent node={this} />;
   }
 
   isIsolated() {
@@ -93,16 +102,93 @@ export class ImageNode extends DecoratorNode {
   }
 
   exportJSON() {
+    // Get the current dimensions (either from node or stored values)
+    const currentWidth =
+      window.imageDimensions && window.imageDimensions[this.getKey()]
+        ? window.imageDimensions[this.getKey()].width
+        : this.__width;
+    const currentHeight =
+      window.imageDimensions && window.imageDimensions[this.getKey()]
+        ? window.imageDimensions[this.getKey()].height
+        : this.__height;
+
     return {
       type: "image",
       version: 1,
       src: this.__src,
       altText: this.__altText,
-      width: this.__width,
-      height: this.__height,
+      width: currentWidth,
+      height: currentHeight,
       maxWidth: this.__maxWidth,
     };
   }
+}
+
+function ImageComponent({ node }) {
+  const [editor] = useLexicalComposerContext();
+
+  const handleResize = React.useCallback(
+    (newWidth, newHeight) => {
+      console.log("Image resized to:", newWidth, "x", newHeight);
+
+      // Store the dimensions globally so they persist
+      if (window.imageDimensions) {
+        window.imageDimensions[node.getKey()] = {
+          width: newWidth,
+          height: newHeight,
+        };
+      } else {
+        window.imageDimensions = {
+          [node.getKey()]: { width: newWidth, height: newHeight },
+        };
+      }
+
+      // Update the node within the editor state
+      editor.update(() => {
+        // Create a new node with the updated dimensions
+        const newNode = new ImageNode(
+          node.__src,
+          node.__altText,
+          newWidth,
+          newHeight,
+          node.__maxWidth,
+          node.getKey()
+        );
+
+        // Replace the current node with the new one
+        node.replace(newNode);
+      });
+    },
+    [editor, node]
+  );
+
+  // Get the current dimensions (either from node or stored values)
+  const getCurrentWidth = () => {
+    if (window.imageDimensions && window.imageDimensions[node.getKey()]) {
+      return window.imageDimensions[node.getKey()].width;
+    }
+    return node.__width;
+  };
+
+  const getCurrentHeight = () => {
+    if (window.imageDimensions && window.imageDimensions[node.getKey()]) {
+      return window.imageDimensions[node.getKey()].height;
+    }
+    return node.__height;
+  };
+
+  return (
+    <ResizableImage
+      src={node.__src}
+      alt={node.__altText}
+      width={getCurrentWidth()}
+      height={getCurrentHeight()}
+      maxWidth={node.__maxWidth}
+      onResize={handleResize}
+      nodeKey={node.getKey()}
+      isSelected={false} // This will be handled by selection state
+    />
+  );
 }
 
 export function $createImageNode(src, altText, width, height, maxWidth) {
