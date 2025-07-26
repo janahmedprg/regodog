@@ -96,7 +96,7 @@ body {
   padding: 25px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
   transition: transform 0.3s ease, box-shadow 0.3s ease;
-  margin: 0 10px;
+  margin: 10px 10px;
   z-index: 50;
 }
 
