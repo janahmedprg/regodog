@@ -34,8 +34,8 @@ const App = () => {
           <Route path="/create" element={<CreateArticle />} />
           <Route path="/bakery" element={<NewsFeed tag="bakery" />} />
           <Route
-            path="/standard_schnouzer"
-            element={<NewsFeed tag="standard_schnouzer" />}
+            path="/standard_schnauzer"
+            element={<NewsFeed tag="standard_schnauzer" />}
           />
           <Route path="/farm_house" element={<NewsFeed tag="farm_house" />} />
           <Route path="/anything" element={<NewsFeed tag="anything" />} />

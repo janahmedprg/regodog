@@ -6,178 +6,18 @@ import {
   collection,
   getDocs,
   addDoc,
-  doc,
-  updateDoc,
-  deleteDoc,
+  storage,
+  ref,
+  uploadBytes,
+  getDownloadURL,
 } from "../config/firebase.js";
 import { onAuthStateChanged } from "firebase/auth";
 import { useNavigate } from "react-router-dom"; // Import useNavigate for redirection
 import Editor from "./Editor";
+import NewsItem from "./NewsItem";
 import "../styles/styles.css";
 import "../styles/tags.css";
 // import Ad from "./Ad";
-
-const NewsItem = ({
-  title,
-  content,
-  htmlContent,
-  editorState,
-  tags,
-  link,
-  button,
-  isAdmin,
-  onEdit,
-  onRemove,
-  id,
-  createdAt,
-}) => {
-  const navigate = useNavigate();
-  const [isEditing, setIsEditing] = useState(false);
-  const [editedTitle, setEditedTitle] = useState(title);
-  const [selectedTags, setSelectedTags] = useState(tags || []);
-
-  const availableTags = [
-    "bakery",
-    "standard_schnouzer",
-    "farm_house",
-    "anything",
-  ];
-
-  const handleTagChange = (tag) => {
-    setSelectedTags((prev) =>
-      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
-    );
-  };
-
-  const truncateText = (text, wordLimit) => {
-    if (!text) return "";
-    const words = text.split(/\s+/);
-    if (words.length <= wordLimit) return text;
-    return words.slice(0, wordLimit).join(" ") + "...";
-  };
-
-  const truncateHtmlContent = (html) => {
-    if (!html) return "";
-    // Create a temporary div to parse HTML
-    const tempDiv = document.createElement("div");
-    tempDiv.innerHTML = html;
-    const text = tempDiv.textContent || tempDiv.innerText;
-    return truncateText(text, 20);
-  };
-
-  // Function to handle "Read the Article" button click
-  const handleReadArticle = () => {
-    navigate(`/article/${link}`);
-  };
-
-  // Function to handle "Edit" button click
-  const handleEdit = () => {
-    setIsEditing(true);
-  };
-
-  // Function to handle "Save" button click
-  const handleSave = (editorState, htmlContent) => {
-    onEdit(id, editedTitle, editorState, htmlContent, selectedTags);
-    setIsEditing(false);
-  };
-
-  // Function to handle "Cancel" button click
-  const handleCancel = () => {
-    setIsEditing(false);
-    setEditedTitle(title);
-    setSelectedTags(tags || []);
-  };
-
-  // Function to handle "Remove" button click
-  const handleRemove = () => {
-    onRemove(id);
-  };
-
-  // Format the date
-  const formatDate = (timestamp) => {
-    if (!timestamp) return "";
-    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-    return date.toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
-
-  return (
-    <div className="news-item">
-      {isEditing ? (
-        <div className="edit-mode">
-          <input
-            type="text"
-            value={editedTitle}
-            onChange={(e) => setEditedTitle(e.target.value)}
-            className="edit-input"
-            placeholder="Article Title"
-          />
-          <div className="tags-section">
-            <h3>Select Tags:</h3>
-            <div className="tags-container">
-              {availableTags.map((tag) => (
-                <label key={tag} className="tag-label">
-                  <input
-                    type="checkbox"
-                    checked={selectedTags.includes(tag)}
-                    onChange={() => handleTagChange(tag)}
-                  />
-                  {tag}
-                </label>
-              ))}
-            </div>
-          </div>
-          <Editor initialEditorState={editorState} onSave={handleSave} />
-          <div className="edit-buttons">
-            <button onClick={handleCancel} className="edit-cancel-button">
-              Discard Changes
-            </button>
-          </div>
-        </div>
-      ) : (
-        <>
-          <p className="news-title">{title}</p>
-          <p className="news-date">{formatDate(createdAt)}</p>
-          <div className="article-tags">
-            {tags &&
-              tags.map((tag) => (
-                <span key={tag} className="tag">
-                  {tag}
-                </span>
-              ))}
-          </div>
-          <div className="news-content">
-            {htmlContent ? (
-              <div>{truncateHtmlContent(htmlContent)}</div>
-            ) : (
-              <p>{truncateText(content, 20)}</p>
-            )}
-          </div>
-          {button && (
-            <button className="news-button" onClick={handleReadArticle}>
-              {button}
-            </button>
-          )}
-          {isAdmin && (
-            <div className="admin-buttons">
-              <button className="edit-button" onClick={handleEdit}>
-                Edit
-              </button>
-              <button className="remove-button" onClick={handleRemove}>
-                Remove
-              </button>
-            </div>
-          )}
-        </>
-      )}
-    </div>
-  );
-};
 
 const NewsFeed = ({ tag }) => {
   const [newsItems, setNewsItems] = useState([]);
@@ -185,11 +25,13 @@ const NewsFeed = ({ tag }) => {
   const [isCreating, setIsCreating] = useState(false);
   const [newTitle, setNewTitle] = useState("");
   const [selectedTags, setSelectedTags] = useState([]);
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
   const navigate = useNavigate();
 
   const availableTags = [
     "bakery",
-    "standard_schnouzer",
+    "standard_schnauzer",
     "farm_house",
     "anything",
   ];
@@ -198,6 +40,18 @@ const NewsFeed = ({ tag }) => {
     setSelectedTags((prev) =>
       prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
     );
+  };
+
+  const handleImageChange = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      setSelectedImage(file);
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setImagePreview(e.target.result);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   // Fetch news items
@@ -258,6 +112,17 @@ const NewsFeed = ({ tag }) => {
 
     try {
       const serializedState = editorState;
+      let thumbnailUrl = null;
+
+      // Upload image if selected
+      if (selectedImage) {
+        const imageRef = ref(
+          storage,
+          `thumbnails/${Date.now()}_${selectedImage.name}`
+        );
+        const snapshot = await uploadBytes(imageRef, selectedImage);
+        thumbnailUrl = await getDownloadURL(snapshot.ref);
+      }
 
       // Create new article in Firebase
       const docRef = await addDoc(collection(db, "news"), {
@@ -265,6 +130,7 @@ const NewsFeed = ({ tag }) => {
         editorState: serializedState,
         htmlContent: htmlContent,
         tags: selectedTags,
+        thumbnailUrl: thumbnailUrl,
         createdAt: new Date(),
         lastUpdated: new Date(),
       });
@@ -272,63 +138,13 @@ const NewsFeed = ({ tag }) => {
       // Reset form and navigate to the new article
       setNewTitle("");
       setSelectedTags([]);
+      setSelectedImage(null);
+      setImagePreview(null);
       setIsCreating(false);
       navigate(`/article/${docRef.id}`);
     } catch (error) {
       console.error("Error creating article:", error);
       alert("Failed to create article. Please try again.");
-    }
-  };
-
-  // Handle edit button click
-  const handleEdit = async (
-    id,
-    newTitle,
-    editorState,
-    htmlContent,
-    newTags
-  ) => {
-    try {
-      const newsDocRef = doc(db, "news", id);
-      const serializedState = editorState;
-      await updateDoc(newsDocRef, {
-        title: newTitle,
-        editorState: serializedState,
-        htmlContent: htmlContent,
-        tags: newTags,
-        lastUpdated: new Date(),
-      });
-      console.log("News item updated successfully!");
-
-      // Update the local state to reflect the changes
-      setNewsItems((prevItems) =>
-        prevItems.map((item) =>
-          item.id === id
-            ? {
-                ...item,
-                title: newTitle,
-                editorState: serializedState,
-                htmlContent: htmlContent,
-                tags: newTags,
-              }
-            : item
-        )
-      );
-    } catch (error) {
-      console.error("Error updating news item: ", error);
-    }
-  };
-
-  const handleRemove = async (id) => {
-    try {
-      const newsDocRef = doc(db, "news", id);
-      await deleteDoc(newsDocRef);
-      console.log("News item removed successfully!");
-
-      // Update the local state to remove the deleted item
-      setNewsItems((prevItems) => prevItems.filter((item) => item.id !== id));
-    } catch (error) {
-      console.error("Error removing news item: ", error);
     }
   };
 
@@ -356,6 +172,20 @@ const NewsFeed = ({ tag }) => {
                 placeholder="Article Title"
                 className="article-title-input"
               />
+              <div className="image-upload-section">
+                <h3>Thumbnail Image:</h3>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageChange}
+                  className="image-input"
+                />
+                {imagePreview && (
+                  <div className="image-preview">
+                    <img src={imagePreview} alt="Thumbnail preview" />
+                  </div>
+                )}
+              </div>
               <div className="tags-section">
                 <h3>Select Tags:</h3>
                 <div className="tags-container">
@@ -378,6 +208,8 @@ const NewsFeed = ({ tag }) => {
                   setIsCreating(false);
                   setNewTitle("");
                   setSelectedTags([]);
+                  setSelectedImage(null);
+                  setImagePreview(null);
                 }}
               >
                 Cancel
@@ -398,11 +230,9 @@ const NewsFeed = ({ tag }) => {
             editorState={item.editorState}
             tags={item.tags}
             link={item.id}
-            button="Read the Article"
             isAdmin={isAdmin}
-            onEdit={handleEdit}
-            onRemove={handleRemove}
             createdAt={item.createdAt}
+            thumbnailUrl={item.thumbnailUrl}
           />
         ))}
       </div>

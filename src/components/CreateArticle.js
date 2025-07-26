@@ -14,7 +14,7 @@ const CreateArticle = () => {
 
   const availableTags = [
     "bakery",
-    "standard_schnouzer",
+    "standard_schnauzer",
     "farm_house",
     "anything",
   ];
