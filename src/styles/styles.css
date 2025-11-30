@@ -896,19 +896,21 @@ body {
 .logo-container {
   display: flex;
   align-items: center;
-  width: 230px;
-  width: auto;
+  max-width: 230px;
+  width: 100%;
+  overflow: visible;
 }
 
 .logo {
   width: 100%;
-  height: auto;
   transition: transform 0.3s ease;
+  overflow: visible;
 }
 
 .logo-a {
   max-width: 230px;
   width: 100%;
+  overflow: visible;
 }
 
 .logo:hover {
