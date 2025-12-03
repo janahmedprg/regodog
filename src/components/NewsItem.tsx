@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/styles.css";
 import "../styles/tags.css";
@@ -6,8 +6,8 @@ import "../styles/tags.css";
 export interface NewsItemProps {
   title: string;
   content?: string;
-  htmlContent?: string;
-  editorState?: string;
+  htmlContentUrl?: string;
+  editorStateUrl?: string;
   tags?: string[];
   link: string;
   isAdmin?: boolean;
@@ -19,16 +19,14 @@ export interface NewsItemProps {
 const NewsItem: React.FC<NewsItemProps> = ({
   title,
   content,
-  htmlContent,
-  editorState,
-  tags,
+  htmlContentUrl,
   link,
-  isAdmin,
-  id,
   createdAt,
   thumbnailUrl,
 }) => {
   const navigate = useNavigate();
+
+  const [htmlPreviewText, setHtmlPreviewText] = useState<string | null>(null);
 
   const truncateText = (
     text: string | undefined,
@@ -40,13 +38,28 @@ const NewsItem: React.FC<NewsItemProps> = ({
     return words.slice(0, wordLimit).join(" ") + "...";
   };
 
-  const truncateHtmlContent = (html: string | undefined): string => {
-    if (!html) return "";
-    const tempDiv = document.createElement("div");
-    tempDiv.innerHTML = html;
-    const text = tempDiv.textContent || tempDiv.innerText || "";
-    return truncateText(text, 20);
-  };
+  // Fetch & extract text from HTML URL
+  useEffect(() => {
+    if (!htmlContentUrl) return;
+
+    const fetchHtml = async () => {
+      try {
+        const response = await fetch(htmlContentUrl);
+        const html = await response.text();
+
+        const tempDiv = document.createElement("div");
+        tempDiv.innerHTML = html;
+        const extractedText = tempDiv.textContent || tempDiv.innerText || "";
+
+        setHtmlPreviewText(truncateText(extractedText, 20));
+      } catch (err) {
+        console.error("Error loading HTML content preview:", err);
+        setHtmlPreviewText(null);
+      }
+    };
+
+    fetchHtml();
+  }, [htmlContentUrl]);
 
   const handleReadArticle = () => {
     navigate(`/article/${link}`);
@@ -80,8 +93,13 @@ const NewsItem: React.FC<NewsItemProps> = ({
       <p className="news-date">{formatDate(createdAt)}</p>
 
       <div className="news-content">
-        {htmlContent ? (
-          <div>{truncateHtmlContent(htmlContent)}</div>
+        {/* Prefer HTML preview if available */}
+        {htmlContentUrl ? (
+          htmlPreviewText ? (
+            <p>{htmlPreviewText}</p>
+          ) : (
+            <p>Loading preview...</p> // small UX improvement
+          )
         ) : (
           <p>{truncateText(content, 20)}</p>
         )}

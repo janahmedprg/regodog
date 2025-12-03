@@ -109,14 +109,10 @@ const NewsFeed: React.FC<NewsFeedProps> = ({ tag }) => {
         {newsItems.map((item) => (
           <NewsItem
             key={item.id}
-            id={item.id}
             title={item.title}
             content={item.content}
-            htmlContent={item.htmlContent}
-            editorState={item.editorState}
-            tags={item.tags}
+            htmlContentUrl={item.htmlContentUrl}
             link={item.id}
-            isAdmin={isAdmin}
             createdAt={item.createdAt}
             thumbnailUrl={item.thumbnailUrl}
           />

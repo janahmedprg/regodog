@@ -4,15 +4,12 @@ import {
   db,
   doc,
   getDoc,
-  updateDoc,
   deleteDoc,
   getDocs,
   auth,
   collection,
   storage,
   ref,
-  uploadBytes,
-  getDownloadURL,
   deleteObject,
 } from "../config/firebase";
 import { onAuthStateChanged, User } from "firebase/auth";
@@ -26,8 +23,8 @@ interface ArticleData {
   title: string;
   tags?: string[];
   thumbnailUrl?: string;
-  editorState?: string;
-  htmlContent?: string;
+  editorStateUrl?: string;
+  htmlContentUrl?: string;
   content?: string;
 }
 
@@ -45,7 +42,17 @@ const Article: React.FC = () => {
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
-  // Fetch article
+  // NEW: fetched HTML content
+  const [htmlContent, setHtmlContent] = useState<string>("");
+
+  // NEW: fetched editorState JSON
+  const [fetchedEditorState, setFetchedEditorState] = useState<string | null>(
+    null
+  );
+
+  // --------------------------
+  // Fetch article + file URLs
+  // --------------------------
   useEffect(() => {
     const fetchArticle = async () => {
       if (!id) return;
@@ -60,6 +67,28 @@ const Article: React.FC = () => {
           setEditedTitle(data.title);
           setSelectedTags(data.tags || []);
           setImagePreview(data.thumbnailUrl || null);
+
+          // Fetch HTML content if URL exists
+          if (data.htmlContentUrl) {
+            try {
+              const response = await fetch(data.htmlContentUrl);
+              const html = await response.text();
+              setHtmlContent(html);
+            } catch (err) {
+              console.error("Error fetching HTML:", err);
+            }
+          }
+
+          // Fetch editorState JSON if URL exists
+          if (data.editorStateUrl) {
+            try {
+              const response = await fetch(data.editorStateUrl);
+              const json = await response.text();
+              setFetchedEditorState(json);
+            } catch (err) {
+              console.error("Error fetching editor state JSON:", err);
+            }
+          }
         }
       } catch (error) {
         console.error("Error fetching article:", error);
@@ -71,7 +100,9 @@ const Article: React.FC = () => {
     fetchArticle();
   }, [id]);
 
-  // Check admin status
+  // --------------------------
+  // Verify admin status
+  // --------------------------
   useEffect(() => {
     const checkIfAdmin = async (userId: string) => {
       try {
@@ -93,52 +124,6 @@ const Article: React.FC = () => {
 
     return () => unsubscribe();
   }, []);
-
-  // Note: handleSave is available for future use. Users can also use the save button from ActionsPlugin.
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const handleSave = async (editorState: string, htmlContent: string) => {
-    if (!id) return;
-    if (!editorState) return console.error("Missing editor state");
-
-    try {
-      const updateData: Partial<ArticleData> & { lastUpdated: Date } = {
-        title: editedTitle,
-        editorState,
-        htmlContent,
-        tags: selectedTags,
-        lastUpdated: new Date(),
-      };
-
-      // Upload image if selected
-      if (selectedImage) {
-        const imageRef = ref(
-          storage,
-          `thumbnails/${Date.now()}_${selectedImage.name}`
-        );
-        const snapshot = await uploadBytes(imageRef, selectedImage);
-        const url = await getDownloadURL(snapshot.ref);
-
-        updateData.thumbnailUrl = url;
-      }
-
-      const docRef = doc(db, "news", id);
-      await updateDoc(docRef, updateData);
-
-      setArticle((prev) =>
-        prev
-          ? {
-              ...prev,
-              ...updateData,
-            }
-          : null
-      );
-
-      setIsEditing(false);
-      setSelectedImage(null);
-    } catch (error) {
-      console.error("Error saving:", error);
-    }
-  };
 
   const handleCancel = () => {
     if (!article) return;
@@ -176,15 +161,33 @@ const Article: React.FC = () => {
     }
   };
 
+  // --------------------------
+  // LOADING STATES
+  // --------------------------
   if (loading) return <div className="loading">Loading...</div>;
   if (!article) return <div className="error">Article not found</div>;
 
+  // Wait for HTML file
+  if (article.htmlContentUrl && !htmlContent) {
+    return <div className="loading">Loading article...</div>;
+  }
+
+  // Wait for editorState JSON file
+  if (article.editorStateUrl && !fetchedEditorState) {
+    return <div className="loading">Loading editor data...</div>;
+  }
+
+  // --------------------------
+  // MAIN RENDER
+  // --------------------------
   return (
     <div className="article-container">
       {isEditing ? (
         <div className="edit-mode">
           <App
-            initialEditorState={article.editorState}
+            initialEditorState={
+              fetchedEditorState || article.editorStateUrl || ""
+            }
             articleId={id}
             articleTitle={editedTitle}
             articleTags={selectedTags}
@@ -217,10 +220,10 @@ const Article: React.FC = () => {
           </div>
 
           <div className="article-content">
-            {article.htmlContent ? (
+            {htmlContent ? (
               <div
                 className="article-html-content"
-                dangerouslySetInnerHTML={{ __html: article.htmlContent }}
+                dangerouslySetInnerHTML={{ __html: htmlContent }}
               />
             ) : (
               <p>{article.content}</p>

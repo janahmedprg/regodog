@@ -20,7 +20,10 @@ import {
   uploadBytes,
   getDownloadURL,
   auth,
+  deleteObject,
 } from "../../../config/firebase";
+
+import { v4 as uuidv4 } from "uuid";
 
 export interface SaveEditorToFirebaseOptions {
   title: string;
@@ -54,14 +57,30 @@ export async function saveEditorToFirebase(
 
   try {
     // Get editor state and serialize it
+    const uniqueId = `${Date.now()}-${uuidv4()}`;
     const editorState = editor.getEditorState();
     const serializedState = JSON.stringify(editorState.toJSON());
+
+    const editorStateBlob = new Blob([serializedState], {
+      type: "application/json",
+    });
+
+    const editorStateRef = ref(storage, `editor_state/${uniqueId}.json`);
+    const editorStateSnapshot = await uploadBytes(editorStateRef, editorStateBlob);
+    const editorStateUrl = await getDownloadURL(editorStateSnapshot.ref);
 
     // Generate HTML content from editor state
     let htmlContent = "";
     editorState.read(() => {
       htmlContent = $generateHtmlFromNodes(editor, null);
     });
+
+    const htmlBlob = new Blob([htmlContent], { type: 'text/html' });
+
+    const htmlRef = ref(storage, `editor_html/${uniqueId}.html`);
+    const htmlSnapshot = await uploadBytes(htmlRef, htmlBlob);
+    const htmlContentUrl = await getDownloadURL(htmlSnapshot.ref);
+
 
     // Upload thumbnail image if provided, otherwise preserve existing one
     let thumbnailUrl: string | null = existingThumbnailUrl || null;
@@ -71,13 +90,22 @@ export async function saveEditorToFirebase(
         `thumbnails/${Date.now()}_${thumbnailImage.name}`
       );
       const snapshot = await uploadBytes(imageRef, thumbnailImage);
-      thumbnailUrl = await getDownloadURL(snapshot.ref);
+      const newUrl = await getDownloadURL(snapshot.ref);
+      if (thumbnailUrl) {
+        try {
+          const imgRef = ref(storage, thumbnailUrl);
+          await deleteObject(imgRef);
+        } catch (err) {
+          console.warn("Error deleting image:", err);
+        }
+      }
+      thumbnailUrl = newUrl;
     }
 
     const articleData: {
       title: string;
-      editorState: string;
-      htmlContent: string;
+      editorStateUrl: string;
+      htmlContentUrl: string;
       tags: string[];
       thumbnailUrl?: string | null;
       lastUpdated: Date;
@@ -85,8 +113,8 @@ export async function saveEditorToFirebase(
       createdAt?: Date;
     } = {
       title,
-      editorState: serializedState,
-      htmlContent,
+      editorStateUrl: editorStateUrl,
+      htmlContentUrl,
       tags,
       lastUpdated: new Date(),
       author: auth.currentUser?.uid || "anonymous",
