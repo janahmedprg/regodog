@@ -56,6 +56,7 @@ header h1 {
   position: relative;
   line-height: 1.7;
   font-weight: 400;
+  z-index: 1000;
 }
 
 .editor-shell .editor-container {
@@ -1441,8 +1442,8 @@ button.action-button:disabled {
   overflow: auto;
   height: 36px;
   position: sticky;
-  top: 0;
-  z-index: 2;
+  z-index: 1001;
+  top: 0px;
   overflow-y: hidden; /* disable vertical scroll*/
   border: 1px solid black;
 }

@@ -51,7 +51,7 @@ const NewsItem: React.FC<NewsItemProps> = ({
         tempDiv.innerHTML = html;
         const extractedText = tempDiv.textContent || tempDiv.innerText || "";
 
-        setHtmlPreviewText(truncateText(extractedText, 20));
+        setHtmlPreviewText(truncateText(extractedText, 40));
       } catch (err) {
         console.error("Error loading HTML content preview:", err);
         setHtmlPreviewText(null);

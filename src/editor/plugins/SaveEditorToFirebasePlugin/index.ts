@@ -15,6 +15,7 @@ import {
   addDoc,
   updateDoc,
   doc,
+  getDoc,
   storage,
   ref,
   uploadBytes,
@@ -56,6 +57,25 @@ export async function saveEditorToFirebase(
   }
 
   try {
+    // If updating an existing article, fetch it to get old file URLs for deletion
+    let oldEditorStateUrl: string | null = null;
+    let oldHtmlContentUrl: string | null = null;
+    
+    if (articleId) {
+      try {
+        const articleRef = doc(db, "news", articleId);
+        const articleSnap = await getDoc(articleRef);
+        if (articleSnap.exists()) {
+          const articleData = articleSnap.data();
+          oldEditorStateUrl = articleData.editorStateUrl || null;
+          oldHtmlContentUrl = articleData.htmlContentUrl || null;
+        }
+      } catch (err) {
+        console.warn("Error fetching existing article:", err);
+        // Continue even if fetch fails
+      }
+    }
+
     // Get editor state and serialize it
     const uniqueId = `${Date.now()}-${uuidv4()}`;
     const editorState = editor.getEditorState();
@@ -80,6 +100,38 @@ export async function saveEditorToFirebase(
     const htmlRef = ref(storage, `editor_html/${uniqueId}.html`);
     const htmlSnapshot = await uploadBytes(htmlRef, htmlBlob);
     const htmlContentUrl = await getDownloadURL(htmlSnapshot.ref);
+
+    // Delete old editor state and HTML files if they exist
+    if (oldEditorStateUrl) {
+      try {
+        // Extract path from Firebase Storage download URL
+        // URL format: https://firebasestorage.googleapis.com/v0/b/BUCKET/o/PATH%2FTO%2FFILE?alt=media&token=...
+        const urlObj = new URL(oldEditorStateUrl);
+        const pathMatch = urlObj.pathname.match(/\/o\/(.+)/);
+        if (pathMatch) {
+          const decodedPath = decodeURIComponent(pathMatch[1]);
+          const oldEditorStateRef = ref(storage, decodedPath);
+          await deleteObject(oldEditorStateRef);
+        }
+      } catch (err) {
+        console.warn("Error deleting old editor state:", err);
+      }
+    }
+
+    if (oldHtmlContentUrl) {
+      try {
+        // Extract path from Firebase Storage download URL
+        const urlObj = new URL(oldHtmlContentUrl);
+        const pathMatch = urlObj.pathname.match(/\/o\/(.+)/);
+        if (pathMatch) {
+          const decodedPath = decodeURIComponent(pathMatch[1]);
+          const oldHtmlRef = ref(storage, decodedPath);
+          await deleteObject(oldHtmlRef);
+        }
+      } catch (err) {
+        console.warn("Error deleting old HTML content:", err);
+      }
+    }
 
 
     // Upload thumbnail image if provided, otherwise preserve existing one

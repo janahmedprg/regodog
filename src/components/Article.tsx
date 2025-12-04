@@ -145,12 +145,52 @@ const Article: React.FC = () => {
       const snap = await getDoc(docRef);
       const data = snap.data() as ArticleData;
 
+      // Delete thumbnail image if it exists
       if (data?.thumbnailUrl) {
         try {
-          const imgRef = ref(storage, data.thumbnailUrl);
-          await deleteObject(imgRef);
+          // Extract path from Firebase Storage download URL
+          const urlObj = new URL(data.thumbnailUrl);
+          const pathMatch = urlObj.pathname.match(/\/o\/(.+)/);
+          if (pathMatch) {
+            const decodedPath = decodeURIComponent(pathMatch[1]);
+            const imgRef = ref(storage, decodedPath);
+            await deleteObject(imgRef);
+          }
         } catch (err) {
-          console.warn("Error deleting image:", err);
+          console.warn("Error deleting thumbnail image:", err);
+        }
+      }
+
+      // Delete editor state file if it exists
+      if (data?.editorStateUrl) {
+        try {
+          // Extract path from Firebase Storage download URL
+          // URL format: https://firebasestorage.googleapis.com/v0/b/BUCKET/o/PATH%2FTO%2FFILE?alt=media&token=...
+          const urlObj = new URL(data.editorStateUrl);
+          const pathMatch = urlObj.pathname.match(/\/o\/(.+)/);
+          if (pathMatch) {
+            const decodedPath = decodeURIComponent(pathMatch[1]);
+            const editorStateRef = ref(storage, decodedPath);
+            await deleteObject(editorStateRef);
+          }
+        } catch (err) {
+          console.warn("Error deleting editor state file:", err);
+        }
+      }
+
+      // Delete HTML content file if it exists
+      if (data?.htmlContentUrl) {
+        try {
+          // Extract path from Firebase Storage download URL
+          const urlObj = new URL(data.htmlContentUrl);
+          const pathMatch = urlObj.pathname.match(/\/o\/(.+)/);
+          if (pathMatch) {
+            const decodedPath = decodeURIComponent(pathMatch[1]);
+            const htmlRef = ref(storage, decodedPath);
+            await deleteObject(htmlRef);
+          }
+        } catch (err) {
+          console.warn("Error deleting HTML content file:", err);
         }
       }
 
