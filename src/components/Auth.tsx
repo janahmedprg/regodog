@@ -21,6 +21,10 @@ const Auth: React.FC = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    if (!auth) {
+      return;
+    }
+
     const unsubscribe = onAuthStateChanged(auth, (currentUser: User | null) => {
       if (currentUser) {
         if (currentUser.emailVerified) {
@@ -39,6 +43,11 @@ const Auth: React.FC = () => {
   }, [navigate]);
 
   const handleSignInWithGoogle = async () => {
+    if (!auth || !provider) {
+      setError("Authentication is only available in the browser.");
+      return;
+    }
+
     try {
       const result = await signInWithPopup(auth, provider);
       if (!result.user.emailVerified) {
@@ -52,6 +61,11 @@ const Auth: React.FC = () => {
 
   const handleSignInWithEmail = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!auth) {
+      setError("Authentication is only available in the browser.");
+      return;
+    }
+
     try {
       const userCredential = await signInWithEmailAndPassword(
         auth,
@@ -72,6 +86,11 @@ const Auth: React.FC = () => {
 
   const handleSignUpWithEmail = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!auth) {
+      setError("Authentication is only available in the browser.");
+      return;
+    }
+
     try {
       const userCredential = await createUserWithEmailAndPassword(
         auth,

@@ -52,7 +52,7 @@ function SaveArticleForm({
   const [selectedTags, setSelectedTags] = useState<string[]>(initialTags);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(
-    initialThumbnailUrl
+    initialThumbnailUrl,
   );
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -61,7 +61,7 @@ function SaveArticleForm({
 
   const handleTagChange = (tag: string) => {
     setSelectedTags((prev) =>
-      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
+      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag],
     );
   };
 
@@ -124,7 +124,7 @@ function SaveArticleForm({
       setError(
         err instanceof Error
           ? err.message
-          : "Failed to save article. Please try again."
+          : "Failed to save article. Please try again.",
       );
     }
   };

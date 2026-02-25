@@ -14,6 +14,10 @@ const Header: React.FC = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    if (!auth) {
+      return;
+    }
+
     const unsubscribe = onAuthStateChanged(auth, (currentUser: User | null) => {
       setUser(currentUser);
     });
@@ -51,6 +55,10 @@ const Header: React.FC = () => {
   }, []);
 
   const handleSignOut = async () => {
+    if (!auth) {
+      return;
+    }
+
     await signOut(auth);
     navigate("/auth");
     setIsMenuOpen(false);

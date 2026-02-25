@@ -1,8 +1,7 @@
 // src/NewsFeed.tsx
-import React, { useEffect, useState } from "react";
+import React, { Suspense, useEffect, useState } from "react";
 import { auth, db, collection, getDocs } from "../config/firebase.js";
 import { onAuthStateChanged, User } from "firebase/auth";
-import App from "../editor/App.js";
 import NewsItem, { NewsItemProps } from "./NewsItem.js";
 import "../styles/styles.css";
 import "../styles/tags.css";
@@ -15,7 +14,10 @@ interface NewsItemData extends Omit<NewsItemProps, "link"> {
   id: string;
 }
 
+const EditorApp = React.lazy(() => import("../editor/App.js"));
+
 const NewsFeed: React.FC<NewsFeedProps> = ({ tag }) => {
+  const isBrowser = typeof window !== "undefined";
   const [newsItems, setNewsItems] = useState<NewsItemData[]>([]);
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [isCreating, setIsCreating] = useState<boolean>(false);
@@ -48,6 +50,10 @@ const NewsFeed: React.FC<NewsFeedProps> = ({ tag }) => {
 
   // Check if the user is an admin
   useEffect(() => {
+    if (!auth) {
+      return;
+    }
+
     const checkIfAdmin = async (userId: string) => {
       try {
         const querySnapshot = await getDocs(collection(db, "check-admin"));
@@ -87,7 +93,11 @@ const NewsFeed: React.FC<NewsFeedProps> = ({ tag }) => {
             </button>
           ) : (
             <div className="create-article-form">
-              <App />
+              {isBrowser && (
+                <Suspense fallback={<div className="loading">Loading editor...</div>}>
+                  <EditorApp />
+                </Suspense>
+              )}
               <button
                 className="edit-button"
                 onClick={() => {

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { Suspense, useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   db,
@@ -17,7 +17,7 @@ import { onAuthStateChanged, User } from "firebase/auth";
 import "../styles/styles.css";
 import "../styles/tags.css";
 
-import App from "../editor/App";
+const EditorApp = React.lazy(() => import("../editor/App"));
 
 interface ArticleData {
   title: string;
@@ -29,6 +29,7 @@ interface ArticleData {
 }
 
 const Article: React.FC = () => {
+  const isBrowser = typeof window !== "undefined";
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
@@ -104,6 +105,10 @@ const Article: React.FC = () => {
   // Verify admin status
   // --------------------------
   useEffect(() => {
+    if (!auth) {
+      return;
+    }
+
     const checkIfAdmin = async (userId: string) => {
       try {
         const snapshot = await getDocs(collection(db, "check-admin"));
@@ -224,16 +229,20 @@ const Article: React.FC = () => {
     <div className="article-container">
       {isEditing ? (
         <div className="edit-mode">
-          <App
-            initialEditorState={
-              fetchedEditorState || article.editorStateUrl || ""
-            }
-            articleId={id}
-            articleTitle={editedTitle}
-            articleTags={selectedTags}
-            articleThumbnailUrl={imagePreview || article.thumbnailUrl}
-            onBeforeNavigate={() => setIsEditing(false)}
-          />
+          {isBrowser && (
+            <Suspense fallback={<div className="loading">Loading editor...</div>}>
+              <EditorApp
+                initialEditorState={
+                  fetchedEditorState || article.editorStateUrl || ""
+                }
+                articleId={id}
+                articleTitle={editedTitle}
+                articleTags={selectedTags}
+                articleThumbnailUrl={imagePreview || article.thumbnailUrl}
+                onBeforeNavigate={() => setIsEditing(false)}
+              />
+            </Suspense>
+          )}
 
           <div className="edit-buttons">
             <button onClick={handleCancel} className="edit-button">

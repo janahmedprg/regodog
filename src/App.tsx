@@ -1,5 +1,5 @@
 import React from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 
 import Header from "./components/Header";
 import NewsFeed from "./components/NewsFeed";
@@ -24,24 +24,22 @@ const Layout: React.FC = () => {
 
 const App: React.FC = () => {
   return (
-    <Router>
-      <div className="container">
-        <Header />
+    <div className="container">
+      <Header />
 
-        <Routes>
-          <Route path="/" element={<Layout />} />
-          <Route path="/auth" element={<Auth />} />
-          <Route path="/article/:id" element={<Article />} />
+      <Routes>
+        <Route path="/" element={<Layout />} />
+        <Route path="/auth" element={<Auth />} />
+        <Route path="/article/:id" element={<Article />} />
 
-          {/* Filtered news routes */}
-          {Object.values(HeaderTags).map((tag: string) => (
-            <Route path={`/${tag}`} element={<NewsFeed tag={tag} />} />
-          ))}
-        </Routes>
+        {/* Filtered news routes */}
+        {Object.values(HeaderTags).map((tag: string) => (
+          <Route key={tag} path={`/${tag}`} element={<NewsFeed tag={tag} />} />
+        ))}
+      </Routes>
 
-        <Footer />
-      </div>
-    </Router>
+      <Footer />
+    </div>
   );
 };
 
