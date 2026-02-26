@@ -2,10 +2,10 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { onRequest } from "firebase-functions/v2/https";
-import { onDocumentCreated } from "firebase-functions/v2/firestore";
+// import { onDocumentCreated } from "firebase-functions/v2/firestore";
 import { setGlobalOptions } from "firebase-functions/v2";
-import { getApps, initializeApp } from "firebase-admin/app";
-import { getFirestore } from "firebase-admin/firestore";
+// import { getApps, initializeApp } from "firebase-admin/app";
+// import { getFirestore } from "firebase-admin/firestore";
 
 setGlobalOptions({
   region: "us-central1",
@@ -13,11 +13,11 @@ setGlobalOptions({
   maxInstances: 10,
 });
 
-if (!getApps().length) {
-  initializeApp();
-}
+// if (!getApps().length) {
+//   initializeApp();
+// }
 
-const adminDb = getFirestore();
+// const adminDb = getFirestore();
 
 const MIME_TYPES: Record<string, string> = {
   ".css": "text/css",
@@ -203,68 +203,68 @@ export const ssrApp = onRequest(async (req, res) => {
   }
 });
 
-export const notifyNewsletterOnArticleCreate = onDocumentCreated(
-  "news/{articleId}",
-  async (event) => {
-    const article = event.data?.data();
-    const articleId = event.params.articleId;
+// export const notifyNewsletterOnArticleCreate = onDocumentCreated(
+//   "news/{articleId}",
+//   async (event) => {
+//     const article = event.data?.data();
+//     const articleId = event.params.articleId;
 
-    if (!article || !articleId) {
-      return;
-    }
+//     if (!article || !articleId) {
+//       return;
+//     }
 
-    const title = typeof article.title === "string" ? article.title.trim() : "";
-    if (!title) {
-      console.warn("Skipping newsletter send: article has no title", { articleId });
-      return;
-    }
+//     const title = typeof article.title === "string" ? article.title.trim() : "";
+//     if (!title) {
+//       console.warn("Skipping newsletter send: article has no title", { articleId });
+//       return;
+//     }
 
-    const configuredSiteUrl = "https://regodog.com";
-    const articleUrl = `${configuredSiteUrl.replace(/\/+$/, "")}/article/${articleId}`;
+//     const configuredSiteUrl = "https://regodog.com";
+//     const articleUrl = `${configuredSiteUrl.replace(/\/+$/, "")}/article/${articleId}`;
 
-    const usersSnapshot = await adminDb
-      .collection("user-info")
-      .where("newsletterOptIn", "==", true)
-      .get();
+//     const usersSnapshot = await adminDb
+//       .collection("user-info")
+//       .where("newsletterOptIn", "==", true)
+//       .get();
 
-    const recipients = Array.from(
-      new Set(
-        usersSnapshot.docs
-          .map((doc) => doc.get("email"))
-          .filter((email): email is string => typeof email === "string" && Boolean(email.trim()))
-          .map((email) => email.trim().toLowerCase())
-      )
-    );
+//     const recipients = Array.from(
+//       new Set(
+//         usersSnapshot.docs
+//           .map((doc) => doc.get("email"))
+//           .filter((email): email is string => typeof email === "string" && Boolean(email.trim()))
+//           .map((email) => email.trim().toLowerCase())
+//       )
+//     );
 
-    if (!recipients.length) {
-      console.info("No newsletter recipients found", { articleId });
-      return;
-    }
+//     if (!recipients.length) {
+//       console.info("No newsletter recipients found", { articleId });
+//       return;
+//     }
 
-    const subject = `New article: ${title}`;
-    const textBody = `A new article is live: ${title}\n\nRead it here: ${articleUrl}`;
-    const htmlBody = `
-      <p>A new article is live:</p>
-      <p><strong>${title}</strong></p>
-      <p><a href="${articleUrl}">Read the article</a></p>
-    `;
+//     const subject = `New article: ${title}`;
+//     const textBody = `A new article is live: ${title}\n\nRead it here: ${articleUrl}`;
+//     const htmlBody = `
+//       <p>A new article is live:</p>
+//       <p><strong>${title}</strong></p>
+//       <p><a href="${articleUrl}">Read the article</a></p>
+//     `;
 
-    await Promise.all(
-      recipients.map((email) =>
-        adminDb.collection("mail").add({
-          to: email,
-          message: {
-            subject,
-            text: textBody,
-            html: htmlBody,
-          },
-        })
-      )
-    );
+//     await Promise.all(
+//       recipients.map((email) =>
+//         adminDb.collection("mail").add({
+//           to: email,
+//           message: {
+//             subject,
+//             text: textBody,
+//             html: htmlBody,
+//           },
+//         })
+//       )
+//     );
 
-    console.info("Queued newsletter emails", {
-      articleId,
-      recipientCount: recipients.length,
-    });
-  }
-);
+//     console.info("Queued newsletter emails", {
+//       articleId,
+//       recipientCount: recipients.length,
+//     });
+//   }
+// );
