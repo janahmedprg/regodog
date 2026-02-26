@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { auth } from "../config/firebase";
-import { onAuthStateChanged, signOut, User } from "firebase/auth";
+import { onAuthStateChanged, User } from "firebase/auth";
 import { FaRegUser } from "react-icons/fa";
 import "../styles/styles.css";
 import logo from "../logo.svg";
@@ -12,7 +12,6 @@ const Header: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const headerRef = useRef<HTMLElement>(null);
-  const navigate = useNavigate();
 
   useEffect(() => {
     if (!auth) {
@@ -55,14 +54,11 @@ const Header: React.FC = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const handleSignOut = async () => {
-    if (!auth) {
-      return;
+  const getUserName = (currentUser: User | null) => {
+    if (!currentUser) {
+      return "";
     }
-
-    await signOut(auth);
-    navigate("/auth");
-    setIsMenuOpen(false);
+    return currentUser.displayName || currentUser.email?.split("@")[0] || "Account";
   };
 
   const toggleMenu = () => {
@@ -103,9 +99,14 @@ const Header: React.FC = () => {
         style={{ paddingTop: "28px" }}
       >
         {user ? (
-          <button className="auth-button header-auth-button" onClick={handleSignOut}>
-            Sign Out
-          </button>
+          <Link
+            to="/account"
+            className="auth-button header-auth-button header-account-button"
+            aria-label="Open account page"
+          >
+            <FaRegUser aria-hidden="true" />
+            <span className="header-account-name">{getUserName(user)}</span>
+          </Link>
         ) : (
           <Link
             to="/auth"
@@ -155,12 +156,15 @@ const Header: React.FC = () => {
               </Link>
               <div className="mobile-auth-container">
                 {user ? (
-                  <button
-                    className="auth-button header-auth-button mobile-auth-button"
-                    onClick={handleSignOut}
+                  <Link
+                    to="/account"
+                    className="auth-button header-auth-button mobile-auth-button header-account-button"
+                    onClick={closeMenu}
+                    aria-label="Open account page"
                   >
-                    Sign Out
-                  </button>
+                    <FaRegUser aria-hidden="true" />
+                    <span className="header-account-name">{getUserName(user)}</span>
+                  </Link>
                 ) : (
                   <Link
                     to="/auth"

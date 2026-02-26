@@ -4,8 +4,9 @@ import { Routes, Route } from "react-router-dom";
 import Header from "./components/Header";
 import NewsFeed from "./components/NewsFeed";
 import Auth from "./components/Auth";
-import ResetPassword from "./components/ResetPassword";
+import AuthAction from "./components/AuthAction";
 import Article from "./components/Article";
+import Account from "./components/Account";
 import "./styles/styles.css";
 import Footer from "./components/Footer";
 import { HeaderTags } from "./components/HeaderTags";
@@ -44,7 +45,8 @@ const App: React.FC<AppProps> = ({ initialData }) => {
         />
         <Route path="/auth" element={<Auth />} />
         <Route path="/auth/forgot-password" element={<Auth initialView="forgot" />} />
-        <Route path="/auth/reset-password" element={<ResetPassword />} />
+        <Route path="/auth/action" element={<AuthAction />} />
+        <Route path="/account" element={<Account />} />
         <Route
           path="/article/:id"
           element={<Article initialArticle={initialData?.article} />}

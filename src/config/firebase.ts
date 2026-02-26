@@ -7,11 +7,13 @@ import {
   getDocs,
   addDoc,
   updateDoc,
+  setDoc,
   doc,
   deleteDoc,
   getDoc,
   query,
   where,
+  runTransaction,
 } from "firebase/firestore";
 import {
   getStorage,
@@ -53,6 +55,7 @@ export {
   provider,
   doc,
   updateDoc,
+  setDoc,
   deleteDoc,
   getDoc,
   storage,
@@ -62,5 +65,6 @@ export {
   deleteObject,
   query,
   where,
+  runTransaction,
 };
 // const analytics = getAnalytics(app);

@@ -331,6 +331,206 @@ body {
   overflow: hidden;
 }
 
+.article-interactions {
+  margin-top: 30px;
+  padding-top: 24px;
+  border-top: 1px solid #e1e1e1;
+}
+
+.article-like-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+
+.article-like-button {
+  border: 1px solid #222222;
+  background: transparent;
+  color: #222222;
+  border-radius: 999px;
+  padding: 8px 14px;
+  font-size: 14px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+
+.article-like-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.article-like-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.article-like-button-active {
+  background: #222222;
+  color: #ffffff;
+}
+
+.article-like-icon {
+  display: inline-flex;
+  align-items: center;
+  font-size: 15px;
+}
+
+.article-like-text {
+  font-weight: 600;
+}
+
+.article-like-count {
+  min-width: 22px;
+  text-align: center;
+  border-radius: 999px;
+  padding: 1px 7px;
+  background: rgba(34, 34, 34, 0.08);
+  font-size: 12px;
+}
+
+.article-like-button-active .article-like-count {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.article-auth-hint {
+  margin: 0;
+  color: #666666;
+  font-size: 14px;
+}
+
+.article-comment-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+.article-comment-form label {
+  font-size: 14px;
+  color: #333333;
+}
+
+.article-comment-form textarea {
+  border: 1px solid #d5d5d5;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-family: inherit;
+  font-size: 15px;
+  resize: vertical;
+}
+
+.article-anonymous-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.article-comment-submit {
+  width: fit-content;
+  border: none;
+  background: #222222;
+  color: #ffffff;
+  border-radius: 6px;
+  padding: 10px 16px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.article-comment-submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.article-comment-action-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.article-comments-list h3 {
+  margin: 0 0 10px;
+  font-size: 20px;
+}
+
+.article-comments-empty {
+  margin: 0;
+  color: #666666;
+}
+
+.article-comment-item {
+  border: 1px solid #e1e1e1;
+  border-radius: 8px;
+  padding: 12px;
+  background: #f7f4f0;
+  margin-bottom: 10px;
+}
+
+.article-comment-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.article-comment-meta span {
+  color: #777777;
+  font-size: 12px;
+}
+
+.article-comment-item p {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.article-comment-owner-actions {
+  margin-top: 8px;
+}
+
+.article-comment-edit-block {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.article-comment-edit-block textarea {
+  border: 1px solid #d5d5d5;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-family: inherit;
+  font-size: 15px;
+  resize: vertical;
+}
+
+.article-comment-edit-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.article-comment-edit-button,
+.article-comment-cancel-button {
+  border: 1px solid #222222;
+  background: transparent;
+  color: #222222;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.article-comment-edit-button:disabled,
+.article-comment-cancel-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .article-tags {
   display: flex;
   flex-wrap: wrap;
@@ -635,6 +835,38 @@ body {
   padding: 10px 14px;
 }
 
+.header-account-button {
+  gap: 8px;
+  min-width: 0;
+  min-height: auto;
+  background: transparent;
+  border: none;
+  color: #333333;
+  box-shadow: none;
+  padding: 5px 0;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 500;
+}
+
+.header-account-button:hover {
+  background: transparent;
+  box-shadow: none;
+  color: #111111;
+}
+
+.header-account-button svg {
+  font-size: 16px;
+}
+
+.header-account-name {
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 16px;
+}
+
 .header-auth-icon-button {
   min-width: 44px;
   width: 44px;
@@ -659,6 +891,140 @@ body {
   box-shadow: none;
   color: #111111;
   transform: none;
+}
+
+.account-page-container {
+  max-width: 680px;
+}
+
+.account-card {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 30px;
+}
+
+.account-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.account-row {
+  border: 1px solid #ddd4c8;
+  background: #fdfaf5;
+  border-radius: 10px;
+  padding: 14px;
+}
+
+.account-row-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.account-row-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #202020;
+}
+
+.account-readonly-badge {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: #5f5f5f;
+  border: 1px solid #d7d0c6;
+  border-radius: 999px;
+  padding: 3px 8px;
+  background: #f6f2eb;
+}
+
+.account-row-value {
+  margin: 0;
+  color: #363636;
+  word-break: break-word;
+}
+
+.auth-button.account-edit-button {
+  min-height: 32px;
+  min-width: 32px;
+  width: 32px;
+  padding: 6px;
+  font-size: 12px;
+  border-radius: 999px;
+  line-height: 1;
+  flex: 0 0 auto;
+  background: #ffffff;
+  border: 1px solid #111111;
+  color: #111111;
+  box-shadow: none;
+}
+
+.account-edit-button svg {
+  font-size: 12px;
+}
+
+.auth-button.account-edit-button:hover {
+  background: #111111;
+  color: #ffffff;
+  box-shadow: none;
+}
+
+.account-textarea {
+  resize: vertical;
+  min-height: 88px;
+  font-family: inherit;
+}
+
+.newsletter-toggle-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid #ddd4c8;
+  background: #fffdfa;
+  border-radius: 10px;
+  padding: 12px;
+}
+
+.newsletter-toggle-button {
+  border: 1px solid #111111;
+  background: #ffffff;
+  color: #111111;
+  border-radius: 8px;
+  min-height: 36px;
+  min-width: 96px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.newsletter-toggle-button-on {
+  background: #111111;
+  color: #ffffff;
+}
+
+.account-signout-button {
+  margin-top: 10px;
+}
+
+@media (max-width: 560px) {
+  .account-card {
+    padding: 20px;
+  }
+
+  .account-row-header {
+    align-items: flex-start;
+  }
+
+  .newsletter-toggle-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
 }
 
 .auth-feedback {

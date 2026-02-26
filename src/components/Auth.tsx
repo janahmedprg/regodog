@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { auth, provider } from "../config/firebase";
+import { useNavigate, useLocation } from "react-router-dom";
+import { auth, provider, db, doc, getDoc, setDoc } from "../config/firebase";
 import {
   signInWithPopup,
   signOut,
@@ -52,6 +52,43 @@ interface AuthProps {
   initialView?: "signin" | "signup" | "forgot";
 }
 
+function parseNameParts(displayName: string | null) {
+  if (!displayName) {
+    return {
+      firstName: "",
+      middleName: "",
+      lastName: "",
+    };
+  }
+
+  const parts = displayName
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+
+  if (parts.length === 0) {
+    return {
+      firstName: "",
+      middleName: "",
+      lastName: "",
+    };
+  }
+
+  if (parts.length === 1) {
+    return {
+      firstName: parts[0],
+      middleName: "",
+      lastName: "",
+    };
+  }
+
+  return {
+    firstName: parts[0],
+    middleName: parts.slice(1, -1).join(" "),
+    lastName: parts[parts.length - 1],
+  };
+}
+
 const Auth: React.FC<AuthProps> = ({ initialView = "signin" }) => {
   const [authMode, setAuthMode] = useState<"signin" | "signup" | "forgot">(
     initialView,
@@ -71,10 +108,16 @@ const Auth: React.FC<AuthProps> = ({ initialView = "signin" }) => {
   const [message, setMessage] = useState<string>("");
   const [isSigningIn, setIsSigningIn] = useState<boolean>(false);
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
+    const mode = new URLSearchParams(location.search).get("mode");
+    if (mode === "signin" || mode === "signup" || mode === "forgot") {
+      setAuthMode(mode);
+      return;
+    }
     setAuthMode(initialView);
-  }, [initialView]);
+  }, [initialView, location.search]);
 
   useEffect(() => {
     if (!auth) {
@@ -98,6 +141,32 @@ const Auth: React.FC<AuthProps> = ({ initialView = "signin" }) => {
     return () => unsubscribe();
   }, [navigate]);
 
+  const ensureUserInfoDocument = async (authUser: User) => {
+    try {
+      const userDocRef = doc(db, "user-info", authUser.uid);
+      const snapshot = await getDoc(userDocRef);
+      const data = snapshot.exists() ? snapshot.data() : {};
+      const parsedName = parseNameParts(authUser.displayName);
+
+      await setDoc(
+        userDocRef,
+        {
+          userId: authUser.uid,
+          email: authUser.email || data.email || "",
+          newsletterOptIn: data.newsletterOptIn ?? false,
+          firstName: data.firstName || parsedName.firstName || "",
+          middleName: data.middleName || parsedName.middleName || "",
+          lastName: data.lastName || parsedName.lastName || "",
+          updatedAt: new Date().toISOString(),
+          ...(snapshot.exists() ? {} : { createdAt: new Date().toISOString() }),
+        },
+        { merge: true },
+      );
+    } catch (persistError) {
+      console.error("Error creating/updating user-info document:", persistError);
+    }
+  };
+
   const handleSignInWithGoogle = async () => {
     if (!auth || !provider) {
       setError("Authentication is only available in the browser.");
@@ -108,6 +177,7 @@ const Auth: React.FC<AuthProps> = ({ initialView = "signin" }) => {
       setError("");
       setMessage("");
       const result = await signInWithPopup(auth, provider);
+      await ensureUserInfoDocument(result.user);
       if (!result.user.emailVerified) {
         setMessage("Please verify your email before signing in.");
         await signOut(auth);
@@ -134,6 +204,7 @@ const Auth: React.FC<AuthProps> = ({ initialView = "signin" }) => {
         signInEmail,
         signInPassword,
       );
+      await ensureUserInfoDocument(userCredential.user);
       if (userCredential.user.emailVerified) {
         setMessage("Welcome! Redirecting...");
         setTimeout(() => navigate("/"), 2000);
@@ -167,7 +238,11 @@ const Auth: React.FC<AuthProps> = ({ initialView = "signin" }) => {
         signUpEmail.trim(),
         signUpPassword,
       );
-      await sendEmailVerification(userCredential.user);
+      await ensureUserInfoDocument(userCredential.user);
+      await sendEmailVerification(userCredential.user, {
+        url: `${window.location.origin}/auth/action`,
+        handleCodeInApp: false,
+      });
       setMessage("Verification email sent! Please check your inbox.");
       setSignUpEmail("");
       setSignUpPassword("");
@@ -188,7 +263,7 @@ const Auth: React.FC<AuthProps> = ({ initialView = "signin" }) => {
     try {
       setError("");
       await sendPasswordResetEmail(auth, resetEmail.trim(), {
-        url: "https://regodog.com/auth/reset-password",
+        url: `${window.location.origin}/auth/action`,
         handleCodeInApp: false,
       });
       setMessage("Password reset email sent. Please check your inbox.");

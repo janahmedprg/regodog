@@ -20,7 +20,7 @@ const EditorApp = React.lazy(() => import("../editor/App.js"));
 const NewsFeed: React.FC<NewsFeedProps> = ({ tag, initialNewsItems }) => {
   const isBrowser = typeof window !== "undefined";
   const [newsItems, setNewsItems] = useState<NewsItemData[]>(
-    initialNewsItems ?? []
+    initialNewsItems ?? [],
   );
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [isCreating, setIsCreating] = useState<boolean>(false);
@@ -44,7 +44,7 @@ const NewsFeed: React.FC<NewsFeedProps> = ({ tag, initialNewsItems }) => {
           : items;
         setNewsItems((previousItems) => {
           const previousPreviewById = new Map(
-            previousItems.map((item) => [item.id, item.previewText] as const)
+            previousItems.map((item) => [item.id, item.previewText] as const),
           );
 
           return filteredItems.map((item) => ({
@@ -70,11 +70,10 @@ const NewsFeed: React.FC<NewsFeedProps> = ({ tag, initialNewsItems }) => {
       try {
         const querySnapshot = await getDocs(collection(db, "check-admin"));
         const isAdmin = querySnapshot.docs.some(
-          (doc) => doc.data().id === userId
+          (doc) => doc.data().id === userId,
         );
         return isAdmin;
-      } catch (error) {
-        console.error("Error checking admin status:", error);
+      } catch {
         return false;
       }
     };
@@ -106,7 +105,9 @@ const NewsFeed: React.FC<NewsFeedProps> = ({ tag, initialNewsItems }) => {
           ) : (
             <div className="create-article-form">
               {isBrowser && (
-                <Suspense fallback={<div className="loading">Loading editor...</div>}>
+                <Suspense
+                  fallback={<div className="loading">Loading editor...</div>}
+                >
                   <EditorApp />
                 </Suspense>
               )}
