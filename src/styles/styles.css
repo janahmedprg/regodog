@@ -1400,6 +1400,36 @@ body {
   margin-bottom: 12px;
 }
 
+.shop-page {
+  max-width: 900px;
+  margin: 40px auto;
+  padding: 0 20px;
+}
+
+.shop-coming-soon {
+  border: 1px solid #e1e1e1;
+  border-radius: 12px;
+  padding: 36px 28px;
+  background: #faf9f7;
+}
+
+.shop-badge {
+  margin: 0 0 10px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: #555;
+}
+
+.shop-coming-soon h1 {
+  margin: 0 0 12px;
+  font-size: 2rem;
+}
+
+.shop-coming-soon p {
+  margin: 0;
+}
+
 /* Logo Styles */
 .logo-container {
   display: flex;
