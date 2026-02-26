@@ -33,10 +33,11 @@ jobs:
           npm ci
           npm run build
 
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_REGODOG_84BA8 }}
+
       - name: Deploy Hosting + SSR Function
-        env:
-          FIREBASE_SERVICE_ACCOUNT_REGODOG_84BA8: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_REGODOG_84BA8 }}
         run: |
-          echo "$FIREBASE_SERVICE_ACCOUNT_REGODOG_84BA8" > "$RUNNER_TEMP/firebase-service-account.json"
-          export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/firebase-service-account.json"
           npx firebase-tools deploy --project regodog-84ba8 --only functions:ssr_function,hosting
