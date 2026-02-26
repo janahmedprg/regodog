@@ -41,6 +41,9 @@ const Footer: React.FC = () => {
               <IoIosMail />
             </a>
           </div>
+          <Link to="/privacy-policy" className="footer-link">
+            Privacy Policy
+          </Link>
         </div>
         <div className="footer-copyright">
           Copyright {new Date().getFullYear()}, Regodog - All Rights Reserved.

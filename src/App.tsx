@@ -11,6 +11,7 @@ import "./styles/styles.css";
 import Footer from "./components/Footer";
 import { HeaderTags } from "./components/HeaderTags";
 import type { SSRData } from "./ssr/types";
+import PrivacyPolicy from "./components/PrivacyPolicy";
 
 interface LayoutProps {
   initialNewsItems?: SSRData["newsItems"];
@@ -51,6 +52,7 @@ const App: React.FC<AppProps> = ({ initialData }) => {
           path="/article/:id"
           element={<Article initialArticle={initialData?.article} />}
         />
+        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
 
         {/* Filtered news routes */}
         {Object.values(HeaderTags).map((tag: string) => (

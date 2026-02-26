@@ -1344,7 +1344,8 @@ body {
   letter-spacing: 1px;
   color: #000000;
   text-decoration: none;
-  margin-bottom: 15px;
+  margin-top: 16px;
+  margin-bottom: 6px;
   font-weight: 500;
   transition: color 0.3s ease;
 }
@@ -1375,6 +1376,28 @@ body {
   font-size: 12px;
   color: #888888;
   margin-top: 20px;
+}
+
+.privacy-policy-page {
+  max-width: 900px;
+  margin: 40px auto;
+  padding: 0 20px;
+  line-height: 1.6;
+}
+
+.privacy-policy-page h1 {
+  font-size: 2rem;
+  margin-bottom: 12px;
+}
+
+.privacy-policy-page h2 {
+  font-size: 1.2rem;
+  margin-top: 24px;
+  margin-bottom: 8px;
+}
+
+.privacy-policy-page p {
+  margin-bottom: 12px;
 }
 
 /* Logo Styles */
