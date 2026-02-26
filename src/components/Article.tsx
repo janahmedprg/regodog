@@ -20,31 +20,52 @@ import "../styles/tags.css";
 const EditorApp = React.lazy(() => import("../editor/App"));
 
 interface ArticleData {
+  id?: string;
   title: string;
   tags?: string[];
   thumbnailUrl?: string;
   editorStateUrl?: string;
   htmlContentUrl?: string;
   content?: string;
+  htmlContent?: string;
 }
 
-const Article: React.FC = () => {
+interface ArticleProps {
+  initialArticle?: ArticleData;
+}
+
+const Article: React.FC<ArticleProps> = ({ initialArticle }) => {
   const isBrowser = typeof window !== "undefined";
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const isSeededArticle = Boolean(initialArticle && initialArticle.id === id);
+  const seededHtmlFromDom =
+    isBrowser && isSeededArticle && !initialArticle?.htmlContent
+      ? document.querySelector(".article-html-content")?.innerHTML || ""
+      : "";
 
-  const [article, setArticle] = useState<ArticleData | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [article, setArticle] = useState<ArticleData | null>(
+    isSeededArticle ? initialArticle || null : null
+  );
+  const [loading, setLoading] = useState<boolean>(!isSeededArticle);
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [isEditing, setIsEditing] = useState<boolean>(false);
 
-  const [editedTitle, setEditedTitle] = useState<string>("");
-  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [editedTitle, setEditedTitle] = useState<string>(
+    isSeededArticle ? initialArticle?.title || "" : ""
+  );
+  const [selectedTags, setSelectedTags] = useState<string[]>(
+    isSeededArticle ? initialArticle?.tags || [] : []
+  );
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(
+    isSeededArticle ? initialArticle?.thumbnailUrl || null : null
+  );
 
   // NEW: fetched HTML content
-  const [htmlContent, setHtmlContent] = useState<string>("");
+  const [htmlContent, setHtmlContent] = useState<string>(
+    isSeededArticle ? initialArticle?.htmlContent || seededHtmlFromDom : ""
+  );
 
   // NEW: fetched editorState JSON
   const [fetchedEditorState, setFetchedEditorState] = useState<string | null>(
@@ -55,6 +76,13 @@ const Article: React.FC = () => {
   // Fetch article + file URLs
   // --------------------------
   useEffect(() => {
+    if (
+      isSeededArticle &&
+      (!initialArticle?.htmlContentUrl || Boolean(initialArticle.htmlContent))
+    ) {
+      return;
+    }
+
     const fetchArticle = async () => {
       if (!id) return;
 
@@ -64,7 +92,7 @@ const Article: React.FC = () => {
 
         if (docSnap.exists()) {
           const data = docSnap.data() as ArticleData;
-          setArticle(data);
+          setArticle({ ...data, id: docSnap.id });
           setEditedTitle(data.title);
           setSelectedTags(data.tags || []);
           setImagePreview(data.thumbnailUrl || null);
@@ -99,7 +127,7 @@ const Article: React.FC = () => {
     };
 
     fetchArticle();
-  }, [id]);
+  }, [id, isSeededArticle, initialArticle]);
 
   // --------------------------
   // Verify admin status
@@ -212,13 +240,13 @@ const Article: React.FC = () => {
   if (loading) return <div className="loading">Loading...</div>;
   if (!article) return <div className="error">Article not found</div>;
 
-  // Wait for HTML file
-  if (article.htmlContentUrl && !htmlContent) {
+  // Only block rendering when there is no server/client HTML and no plain text fallback.
+  if (article.htmlContentUrl && !htmlContent && !article.content) {
     return <div className="loading">Loading article...</div>;
   }
 
-  // Wait for editorState JSON file
-  if (article.editorStateUrl && !fetchedEditorState) {
+  // Editor state is only needed when entering edit mode.
+  if (isEditing && article.editorStateUrl && !fetchedEditorState) {
     return <div className="loading">Loading editor data...</div>;
   }
 

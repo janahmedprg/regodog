@@ -8,6 +8,7 @@ import "../styles/tags.css";
 
 interface NewsFeedProps {
   tag?: string;
+  initialNewsItems?: NewsItemData[];
 }
 
 interface NewsItemData extends Omit<NewsItemProps, "link"> {
@@ -16,9 +17,11 @@ interface NewsItemData extends Omit<NewsItemProps, "link"> {
 
 const EditorApp = React.lazy(() => import("../editor/App.js"));
 
-const NewsFeed: React.FC<NewsFeedProps> = ({ tag }) => {
+const NewsFeed: React.FC<NewsFeedProps> = ({ tag, initialNewsItems }) => {
   const isBrowser = typeof window !== "undefined";
-  const [newsItems, setNewsItems] = useState<NewsItemData[]>([]);
+  const [newsItems, setNewsItems] = useState<NewsItemData[]>(
+    initialNewsItems ?? []
+  );
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [isCreating, setIsCreating] = useState<boolean>(false);
   const [newTitle, setNewTitle] = useState<string>("");
@@ -39,7 +42,16 @@ const NewsFeed: React.FC<NewsFeedProps> = ({ tag }) => {
         const filteredItems = tag
           ? items.filter((item) => item.tags && item.tags.includes(tag))
           : items;
-        setNewsItems(filteredItems);
+        setNewsItems((previousItems) => {
+          const previousPreviewById = new Map(
+            previousItems.map((item) => [item.id, item.previewText] as const)
+          );
+
+          return filteredItems.map((item) => ({
+            ...item,
+            previewText: item.previewText || previousPreviewById.get(item.id),
+          }));
+        });
       } catch (error) {
         console.error("Error fetching news:", error);
       }
@@ -122,6 +134,7 @@ const NewsFeed: React.FC<NewsFeedProps> = ({ tag }) => {
             title={item.title}
             content={item.content}
             htmlContentUrl={item.htmlContentUrl}
+            previewText={item.previewText}
             link={item.id}
             createdAt={item.createdAt}
             thumbnailUrl={item.thumbnailUrl}

@@ -28,6 +28,12 @@ const MIME_TYPES = {
   ".woff2": "font/woff2",
 };
 
+function injectSSRData(html, initialData) {
+  const serializedData = JSON.stringify(initialData ?? {}).replace(/</g, "\\u003c");
+  const ssrScript = `<script>window.__SSR_DATA__=${serializedData};</script>`;
+  return html.replace("</body>", `${ssrScript}</body>`);
+}
+
 if (isProd) {
   prodTemplate = await fs.readFile(path.resolve(root, "dist/client/index.html"), "utf-8");
   const serverEntry = path.resolve(root, "dist/server/entry-server.js");
@@ -107,12 +113,13 @@ const server = http.createServer(async (req, res) => {
       const template = await fs.readFile(path.resolve(root, "index.html"), "utf-8");
       const transformedTemplate = await vite.transformIndexHtml(requestUrl, template);
       const { render } = await vite.ssrLoadModule("/src/entry-server.tsx");
-      const appHtml = await render(requestUrl);
+      const { appHtml, initialData } = await render(requestUrl);
 
-      const html = transformedTemplate.replace(
+      const htmlWithApp = transformedTemplate.replace(
         '<div id="root"></div>',
         `<div id="root">${appHtml}</div>`
       );
+      const html = injectSSRData(htmlWithApp, initialData);
 
       res.writeHead(200, { "Content-Type": "text/html" });
       res.end(html);
@@ -127,8 +134,12 @@ const server = http.createServer(async (req, res) => {
       }
     }
 
-    const appHtml = await prodRender(requestUrl);
-    const html = prodTemplate.replace('<div id="root"></div>', `<div id="root">${appHtml}</div>`);
+    const { appHtml, initialData } = await prodRender(requestUrl);
+    const htmlWithApp = prodTemplate.replace(
+      '<div id="root"></div>',
+      `<div id="root">${appHtml}</div>`
+    );
+    const html = injectSSRData(htmlWithApp, initialData);
 
     res.writeHead(200, { "Content-Type": "text/html" });
     res.end(html);

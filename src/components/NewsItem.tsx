@@ -7,6 +7,7 @@ export interface NewsItemProps {
   title: string;
   content?: string;
   htmlContentUrl?: string;
+  previewText?: string;
   editorStateUrl?: string;
   tags?: string[];
   link: string;
@@ -20,6 +21,7 @@ const NewsItem: React.FC<NewsItemProps> = ({
   title,
   content,
   htmlContentUrl,
+  previewText,
   link,
   createdAt,
   thumbnailUrl,
@@ -38,20 +40,23 @@ const NewsItem: React.FC<NewsItemProps> = ({
     return words.slice(0, wordLimit).join(" ") + "...";
   };
 
-  // Fetch & extract text from HTML URL
+  const extractTextFromHtml = (html: string): string =>
+    html
+      .replace(/<style[\s\S]*?>[\s\S]*?<\/style>/gi, " ")
+      .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, " ")
+      .replace(/<[^>]+>/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+
+  // Fetch preview on client only when SSR preview text is not provided.
   useEffect(() => {
-    if (!htmlContentUrl) return;
+    if (!htmlContentUrl || previewText) return;
 
     const fetchHtml = async () => {
       try {
         const response = await fetch(htmlContentUrl);
         const html = await response.text();
-
-        const tempDiv = document.createElement("div");
-        tempDiv.innerHTML = html;
-        const extractedText = tempDiv.textContent || tempDiv.innerText || "";
-
-        setHtmlPreviewText(truncateText(extractedText, 40));
+        setHtmlPreviewText(truncateText(extractTextFromHtml(html), 40));
       } catch (err) {
         console.error("Error loading HTML content preview:", err);
         setHtmlPreviewText(null);
@@ -59,7 +64,9 @@ const NewsItem: React.FC<NewsItemProps> = ({
     };
 
     fetchHtml();
-  }, [htmlContentUrl]);
+  }, [htmlContentUrl, previewText]);
+
+  const htmlPreview = previewText || htmlPreviewText;
 
   const handleReadArticle = () => {
     navigate(`/article/${link}`);
@@ -95,11 +102,7 @@ const NewsItem: React.FC<NewsItemProps> = ({
       <div className="news-content">
         {/* Prefer HTML preview if available */}
         {htmlContentUrl ? (
-          htmlPreviewText ? (
-            <p>{htmlPreviewText}</p>
-          ) : (
-            <p>Loading preview...</p> // small UX improvement
-          )
+          <p>{htmlPreview || truncateText(content, 20)}</p>
         ) : (
           <p>{truncateText(content, 20)}</p>
         )}

@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "node server.js",
-    "build": "tsc -b && vite build --outDir dist/client && vite build --ssr src/entry-server.tsx --outDir dist/server && npx tsx ./generateSitemap.ts",
+    "build:ssr": "tsc -b && vite build --outDir dist/client && vite build --ssr src/entry-server.tsx --outDir dist/server",
+    "build": "npm run build:ssr && npx tsx ./generateSitemap.ts",
     "lint": "eslint .",
     "preview": "vite preview",
     "start": "NODE_ENV=production node server.js"
@@ -33,6 +34,7 @@
     "date-fns": "^4.1.0",
     "dotenv": "^17.2.3",
     "firebase": "^11.6.0",
+    "firebase-admin": "^13.6.1",
     "katex": "^0.16.10",
     "lexical": "0.38.2",
     "lodash": "^4.17.21",
