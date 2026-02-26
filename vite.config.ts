@@ -7,7 +7,4 @@ export default defineConfig({
   build: {
     outDir: 'dist',
   },
-  ssr: {
-    noExternal: true,
-  },
 })

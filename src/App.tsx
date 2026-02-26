@@ -4,6 +4,7 @@ import { Routes, Route } from "react-router-dom";
 import Header from "./components/Header";
 import NewsFeed from "./components/NewsFeed";
 import Auth from "./components/Auth";
+import ResetPassword from "./components/ResetPassword";
 import Article from "./components/Article";
 import "./styles/styles.css";
 import Footer from "./components/Footer";
@@ -42,6 +43,8 @@ const App: React.FC<AppProps> = ({ initialData }) => {
           element={<Layout initialNewsItems={initialData?.newsItems} />}
         />
         <Route path="/auth" element={<Auth />} />
+        <Route path="/auth/forgot-password" element={<Auth initialView="forgot" />} />
+        <Route path="/auth/reset-password" element={<ResetPassword />} />
         <Route
           path="/article/:id"
           element={<Article initialArticle={initialData?.article} />}

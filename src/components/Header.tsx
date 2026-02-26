@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { auth } from "../config/firebase";
 import { onAuthStateChanged, signOut, User } from "firebase/auth";
+import { FaRegUser } from "react-icons/fa";
 import "../styles/styles.css";
 import logo from "../logo.svg";
 import { HeaderTags } from "./HeaderTags";
@@ -102,12 +103,16 @@ const Header: React.FC = () => {
         style={{ paddingTop: "28px" }}
       >
         {user ? (
-          <button className="auth-button" onClick={handleSignOut}>
+          <button className="auth-button header-auth-button" onClick={handleSignOut}>
             Sign Out
           </button>
         ) : (
-          <Link to="/auth" className="auth-button">
-            Sign In
+          <Link
+            to="/auth"
+            className="auth-button header-auth-button header-auth-icon-button"
+            aria-label="Sign in or sign up"
+          >
+            <FaRegUser aria-hidden="true" />
           </Link>
         )}
       </div>
@@ -151,7 +156,7 @@ const Header: React.FC = () => {
               <div className="mobile-auth-container">
                 {user ? (
                   <button
-                    className="auth-button mobile-auth-button"
+                    className="auth-button header-auth-button mobile-auth-button"
                     onClick={handleSignOut}
                   >
                     Sign Out
@@ -159,10 +164,11 @@ const Header: React.FC = () => {
                 ) : (
                   <Link
                     to="/auth"
-                    className="auth-button mobile-auth-button"
+                    className="auth-button header-auth-button mobile-auth-button header-auth-icon-button"
                     onClick={closeMenu}
+                    aria-label="Sign in or sign up"
                   >
-                    Sign In
+                    <FaRegUser aria-hidden="true" />
                   </Link>
                 )}
               </div>
