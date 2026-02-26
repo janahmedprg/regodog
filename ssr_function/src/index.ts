@@ -60,6 +60,37 @@ function sanitizePathname(urlPathname: string) {
   return decoded;
 }
 
+function extractTextFromHtml(html: string): string {
+  return html
+    .replace(/<style[\s\S]*?>[\s\S]*?<\/style>/gi, " ")
+    .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, " ")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function truncateWords(text: string, wordLimit: number): string {
+  if (!text) {
+    return "";
+  }
+
+  const words = text.split(/\s+/);
+  if (words.length <= wordLimit) {
+    return text;
+  }
+
+  return `${words.slice(0, wordLimit).join(" ")}...`;
+}
+
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 function buildClientHydrationData(initialData: unknown) {
   if (!initialData || typeof initialData !== "object") {
     return initialData ?? {};
@@ -221,6 +252,30 @@ export const notifyNewsletterOnArticleCreate = onDocumentCreated(
 
     const configuredSiteUrl = "https://regodog.com";
     const articleUrl = `${configuredSiteUrl.replace(/\/+$/, "")}/article/${articleId}`;
+    const safeTitle = escapeHtml(title);
+    const thumbnailUrl =
+      typeof article.thumbnailUrl === "string" ? article.thumbnailUrl.trim() : "";
+    let previewText =
+      typeof article.previewText === "string" ? article.previewText.trim() : "";
+
+    const htmlContentUrl =
+      typeof article.htmlContentUrl === "string" ? article.htmlContentUrl.trim() : "";
+    if (!previewText && htmlContentUrl) {
+      try {
+        const response = await fetch(htmlContentUrl);
+        if (response.ok) {
+          const htmlContent = await response.text();
+          previewText = truncateWords(extractTextFromHtml(htmlContent), 40);
+        }
+      } catch (error) {
+        console.warn("Failed to fetch article HTML for newsletter preview", {
+          articleId,
+          error,
+        });
+      }
+    }
+
+    const safePreview = previewText ? escapeHtml(previewText) : "";
 
     const usersSnapshot = await adminDb
       .collection("user-info")
@@ -242,11 +297,31 @@ export const notifyNewsletterOnArticleCreate = onDocumentCreated(
     }
 
     const subject = `New article: ${title}`;
-    const textBody = `A new article is live: ${title}\n\nRead it here: ${articleUrl}`;
+    const textBody = [
+      `A new article is live: ${title}`,
+      previewText ? `\n${previewText}` : "",
+      `\nRead it here: ${articleUrl}`,
+    ]
+      .filter(Boolean)
+      .join("\n");
     const htmlBody = `
-      <p>A new article is live:</p>
-      <p><strong>${title}</strong></p>
-      <p><a href="${articleUrl}">Read the article</a></p>
+      <div style="font-family:Arial,sans-serif;line-height:1.6;color:#111827;max-width:640px;">
+        <p style="margin:0 0 10px;">A new article is live:</p>
+        <h2 style="margin:0 0 14px;font-size:22px;line-height:1.3;">${safeTitle}</h2>
+        ${
+          thumbnailUrl
+            ? `<p style="margin:0 0 14px;"><img src="${thumbnailUrl}" alt="Article thumbnail" style="width:100%;max-width:640px;height:auto;border-radius:10px;display:block;" /></p>`
+            : ""
+        }
+        ${
+          safePreview
+            ? `<p style="margin:0 0 16px;font-size:15px;color:#374151;">${safePreview}</p>`
+            : ""
+        }
+        <p style="margin:0;">
+          <a href="${articleUrl}" style="display:inline-block;background:#111827;color:#ffffff;text-decoration:none;padding:10px 14px;border-radius:8px;">Read the article</a>
+        </p>
+      </div>
     `;
 
     await Promise.all(
