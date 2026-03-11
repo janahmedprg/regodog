@@ -37,6 +37,8 @@ const MIME_TYPES: Record<string, string> = {
   ".woff2": "font/woff2",
 };
 
+const CONTACT_FORM_RECIPIENT = "romana.regodog@gmail.com";
+
 type SSRRender = (url: string) => Promise<{
   appHtml: string;
   initialData: unknown;
@@ -58,6 +60,14 @@ function sanitizePathname(urlPathname: string) {
     return null;
   }
   return decoded;
+}
+
+function sanitizeShortText(value: string, maxLength: number) {
+  return value.trim().slice(0, maxLength);
+}
+
+function isValidEmail(value: string) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 }
 
 function extractTextFromHtml(html: string): string {
@@ -231,6 +241,78 @@ export const ssrApp = onRequest(async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).send("Internal Server Error");
+  }
+});
+
+export const sendContactMessage = onRequest(async (req, res) => {
+  res.set("Access-Control-Allow-Origin", "*");
+  res.set("Access-Control-Allow-Headers", "Content-Type");
+  res.set("Access-Control-Allow-Methods", "POST, OPTIONS");
+
+  if (req.method === "OPTIONS") {
+    res.status(204).send("");
+    return;
+  }
+
+  if (req.method !== "POST") {
+    res.status(405).json({ error: "Method not allowed." });
+    return;
+  }
+
+  try {
+    const body = req.body;
+    if (!body || typeof body !== "object") {
+      res.status(400).json({ error: "Invalid request body." });
+      return;
+    }
+
+    const bodyObj = body as Record<string, unknown>;
+    const senderEmail = sanitizeShortText(
+      typeof bodyObj.email === "string" ? bodyObj.email : "",
+      254
+    );
+    const subject = sanitizeShortText(
+      typeof bodyObj.subject === "string" ? bodyObj.subject : "",
+      200
+    );
+    const messageText = sanitizeShortText(
+      typeof bodyObj.message === "string" ? bodyObj.message : "",
+      5000
+    );
+
+    if (!senderEmail || !subject || !messageText) {
+      res.status(400).json({ error: "Email, subject, and message are required." });
+      return;
+    }
+
+    if (!isValidEmail(senderEmail)) {
+      res.status(400).json({ error: "Please provide a valid email address." });
+      return;
+    }
+
+    const safeSubject = escapeHtml(subject);
+    const safeEmail = escapeHtml(senderEmail);
+    const safeMessage = escapeHtml(messageText);
+
+    await adminDb.collection("mail").add({
+      to: CONTACT_FORM_RECIPIENT,
+      message: {
+        subject: `Contact form: ${safeSubject}`,
+        text: `New contact form submission:\n\nFrom: ${senderEmail}\nSubject: ${subject}\n\n${messageText}`,
+        html: `<div style="font-family:Arial,sans-serif;line-height:1.6;color:#111827;">
+            <p><strong>From:</strong> <a href="mailto:${safeEmail}">${safeEmail}</a></p>
+            <p><strong>Subject:</strong> ${safeSubject}</p>
+            <p><strong>Message:</strong></p>
+            <pre style="white-space:pre-wrap;background:#f7f7f7;border:1px solid #e5e7eb;padding:12px;border-radius:8px;max-width:640px;">${safeMessage}</pre>
+          </div>`,
+        replyTo: senderEmail,
+      },
+    });
+
+    res.status(200).json({ success: true });
+  } catch (error) {
+    console.error("Failed to queue contact email", error);
+    res.status(500).json({ error: "Failed to send contact message." });
   }
 });
 

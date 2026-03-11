@@ -86,6 +86,7 @@ import { INSERT_COLLAPSIBLE_COMMAND } from "../CollapsiblePlugin";
 import { INSERT_DATETIME_COMMAND } from "../DateTimePlugin";
 import { InsertEquationDialog } from "../EquationsPlugin";
 import { INSERT_EXCALIDRAW_COMMAND } from "../ExcalidrawPlugin";
+import { InsertGalleryDialog } from "../GalleryPlugin";
 import {
   INSERT_IMAGE_COMMAND,
   InsertImageDialog,
@@ -937,6 +938,15 @@ export default function ToolbarPlugin({
     activeEditor.dispatchCommand(INSERT_IMAGE_COMMAND, payload);
   };
 
+  const insertGalleryOnClick = () => {
+    showModal("Insert Gallery", (onClose) => (
+      <InsertGalleryDialog
+        activeEditor={activeEditor}
+        onClose={onClose}
+      />
+    ));
+  };
+
   const canViewerSeeInsertDropdown = !toolbarState.isImageCaption;
   const canViewerSeeInsertCodeButton = !toolbarState.isImageCaption;
 
@@ -1340,6 +1350,10 @@ export default function ToolbarPlugin({
                 >
                   <i className="icon image" />
                   <span className="text">Image</span>
+                </DropDownItem>
+                <DropDownItem onClick={insertGalleryOnClick} className="item">
+                  <i className="icon image" />
+                  <span className="text">Image Gallery</span>
                 </DropDownItem>
                 <DropDownItem
                   onClick={() =>

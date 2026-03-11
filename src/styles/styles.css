@@ -418,6 +418,110 @@ body {
   overflow: hidden;
 }
 
+.article-html-content .GalleryNode__container {
+  margin: 16px 0;
+  padding: 12px;
+  border-radius: 10px;
+  background: transparent;
+  box-shadow: none;
+}
+
+.article-html-content .GalleryNode__main {
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.article-html-content .GalleryNode__mainImage {
+  width: 100%;
+  height: min(420px, 48vw);
+  object-fit: contain;
+  border-radius: 12px;
+  display: block;
+  background: transparent;
+}
+
+.article-html-content .GalleryNode__thumbnails {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: center;
+}
+
+.article-html-content .GalleryNode__arrow {
+  width: 30px;
+  height: 30px;
+  border: 1px solid #ccd8e6;
+  border-radius: 50%;
+  background: #fff;
+  color: #233654;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.article-html-content .GalleryNode__arrow:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.article-html-content .GalleryNode__thumbStrip {
+  max-width: 490px;
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  display: flex;
+  gap: 8px;
+  scrollbar-width: thin;
+  scrollbar-color: #8ea0af transparent;
+  padding-bottom: 2px;
+  scroll-snap-type: x proximity;
+}
+
+.article-html-content .GalleryNode__thumbButton {
+  border: 2px solid transparent;
+  border-radius: 10px;
+  background: #fff;
+  padding: 0;
+  width: 92px;
+  height: 54px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex: 0 0 auto;
+  scroll-snap-align: start;
+}
+
+.article-html-content .GalleryNode__thumbButton:focus,
+.article-html-content .GalleryNode__thumbButton:hover {
+  border-color: #5e7ec6;
+}
+
+.article-html-content .GalleryNode__thumbButtonActive {
+  border-color: #2f6fd6;
+}
+
+.article-html-content .GalleryNode__thumbnail {
+  width: 88px;
+  height: 50px;
+  object-fit: contain;
+  border-radius: 6px;
+  background: transparent;
+}
+
+.article-html-content .GalleryNode__empty {
+  width: 100%;
+  min-height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #566573;
+  background: #fff;
+  border-radius: 8px;
+}
+
 .article-interactions {
   margin-top: 30px;
   padding-top: 24px;

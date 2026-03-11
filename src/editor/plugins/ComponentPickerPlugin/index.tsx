@@ -43,6 +43,7 @@ import {INSERT_COLLAPSIBLE_COMMAND} from '../CollapsiblePlugin';
 import {INSERT_DATETIME_COMMAND} from '../DateTimePlugin';
 import {InsertEquationDialog} from '../EquationsPlugin';
 import {INSERT_EXCALIDRAW_COMMAND} from '../ExcalidrawPlugin';
+import {InsertGalleryDialog} from '../GalleryPlugin';
 import {INSERT_IMAGE_COMMAND, InsertImageDialog} from '../ImagesPlugin';
 import InsertLayoutDialog from '../LayoutPlugin/InsertLayoutDialog';
 import {INSERT_PAGE_BREAK} from '../PageBreakPlugin';
@@ -325,6 +326,14 @@ function getBaseOptions(editor: LexicalEditor, showModal: ShowModal) {
       onSelect: () =>
         showModal('Insert Image', (onClose) => (
           <InsertImageDialog activeEditor={editor} onClose={onClose} />
+        )),
+    }),
+    new ComponentPickerOption('Image Gallery', {
+      icon: <i className="icon image" />,
+      keywords: ['image', 'gallery', 'picture', 'slideshow'],
+      onSelect: () =>
+        showModal('Insert Gallery', (onClose) => (
+          <InsertGalleryDialog activeEditor={editor} onClose={onClose} />
         )),
     }),
     new ComponentPickerOption('Collapsible', {
