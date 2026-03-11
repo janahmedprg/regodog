@@ -7,7 +7,9 @@
  */
 
 import type {
+  DOMConversion,
   DOMConversionOutput,
+  DOMConversionMap,
   DOMExportOutput,
   LexicalNode,
   SerializedLexicalNode,
@@ -117,17 +119,17 @@ export class GalleryNode extends DecoratorNode<JSX.Element> {
     );
   }
 
-  static importDOM() {
+  static importDOM(): DOMConversionMap {
     return {
       figure: (domNode: HTMLDivElement) => ({
         conversion: $convertGalleryElement,
-        priority: 2,
+        priority: 2 as DOMConversion['priority'],
       }),
       div: (domNode: HTMLDivElement) => {
         if (domNode.getAttribute('data-lexical-gallery')) {
           return {
             conversion: $convertGalleryElement,
-            priority: 2,
+            priority: 2 as DOMConversion['priority'],
           };
         }
         return null;

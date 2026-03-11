@@ -256,4 +256,4 @@ export default function GalleryPlugin(): JSX.Element | null {
   return null;
 }
 
-export {InsertGalleryDialog, type InsertGalleryPayload};
+export {InsertGalleryDialog};
