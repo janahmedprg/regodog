@@ -22,6 +22,7 @@ type RawNewsRecord = {
   content?: string;
   htmlContentUrl?: string;
   createdAt?: unknown;
+  lastUpdated?: unknown;
   thumbnailUrl?: string;
   tags?: string[];
   editorStateUrl?: string;
@@ -63,6 +64,17 @@ function parseCreatedAt(value: unknown): number | null {
     return null;
   }
 
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value < 1_000_000_000_000 ? value * 1000 : value;
+  }
+
+  if (typeof value === "string" && /^\d+$/.test(value.trim())) {
+    const numeric = Number.parseInt(value, 10);
+    if (Number.isFinite(numeric)) {
+      return numeric < 1_000_000_000_000 ? numeric * 1000 : numeric;
+    }
+  }
+
   if (
     typeof value === "object" &&
     value !== null &&
@@ -70,6 +82,64 @@ function parseCreatedAt(value: unknown): number | null {
     typeof (value as { toDate?: () => Date }).toDate === "function"
   ) {
     return (value as { toDate: () => Date }).toDate().getTime();
+  }
+
+  if (
+    typeof value === "object" &&
+    value !== null &&
+    "seconds" in (value as Record<string, unknown>)
+  ) {
+    const record = value as {
+      seconds: unknown;
+      nanoseconds?: unknown;
+    };
+    if (typeof record.seconds === "number" && Number.isFinite(record.seconds)) {
+      const seconds =
+        record.seconds < 1_000_000_000_000 ? record.seconds * 1000 : record.seconds;
+      const nanos = typeof record.nanoseconds === "number" ? record.nanoseconds : 0;
+      const date = seconds + nanos / 1_000_000;
+      return Number.isNaN(date) ? null : date;
+    }
+    if (typeof record.seconds === "string" && Number.isFinite(Number(record.seconds))) {
+      const numeric = Number(record.seconds);
+      const seconds = numeric < 1_000_000_000_000 ? numeric * 1000 : numeric;
+      const nanos =
+        typeof record.nanoseconds === "number" ? record.nanoseconds : 0;
+      const date = seconds + nanos / 1_000_000;
+      return Number.isNaN(date) ? null : date;
+    }
+  }
+
+  if (
+    typeof value === "object" &&
+    value !== null &&
+    "_seconds" in (value as Record<string, unknown>)
+  ) {
+    const record = value as {
+      _seconds: unknown;
+      _nanoseconds?: unknown;
+    };
+    if (typeof record._seconds === "number" && Number.isFinite(record._seconds)) {
+      const seconds =
+        record._seconds < 1_000_000_000_000
+          ? record._seconds * 1000
+          : record._seconds;
+      const nanos =
+        typeof record._nanoseconds === "number" ? record._nanoseconds : 0;
+      const date = seconds + nanos / 1_000_000;
+      return Number.isNaN(date) ? null : date;
+    }
+    if (
+      typeof record._seconds === "string" &&
+      Number.isFinite(Number(record._seconds))
+    ) {
+      const numeric = Number(record._seconds);
+      const seconds = numeric < 1_000_000_000_000 ? numeric * 1000 : numeric;
+      const nanos =
+        typeof record._nanoseconds === "number" ? record._nanoseconds : 0;
+      const date = seconds + nanos / 1_000_000;
+      return Number.isNaN(date) ? null : date;
+    }
   }
 
   const date = new Date(value as string | number | Date);
@@ -127,6 +197,7 @@ function toRawNewsRecord(document: FirestoreDocument): RawNewsRecord {
     content,
     htmlContentUrl,
     createdAt: firestoreValueToJs(fields.createdAt),
+    lastUpdated: firestoreValueToJs(fields.lastUpdated),
     thumbnailUrl,
     tags,
     editorStateUrl,
@@ -197,6 +268,7 @@ async function fetchNews(tag?: string): Promise<SSRNewsItem[]> {
       const item: SSRNewsItem = {
         ...rest,
         createdAt: parseCreatedAt(rest.createdAt),
+        lastUpdated: parseCreatedAt(rest.lastUpdated),
       };
 
       if (item.htmlContentUrl) {
@@ -215,7 +287,11 @@ async function fetchNews(tag?: string): Promise<SSRNewsItem[]> {
     })
   );
 
-  return items;
+  return items.sort((a, b) => {
+    const aTime = a.createdAt ?? 0;
+    const bTime = b.createdAt ?? 0;
+    return bTime - aTime;
+  });
 }
 
 async function fetchArticleById(id: string): Promise<SSRArticle | undefined> {

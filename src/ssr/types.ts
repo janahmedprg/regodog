@@ -5,6 +5,7 @@ export interface SSRNewsItem {
   htmlContentUrl?: string;
   previewText?: string;
   createdAt?: number | null;
+  lastUpdated?: number | null;
   thumbnailUrl?: string;
 }
 
