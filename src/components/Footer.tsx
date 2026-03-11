@@ -105,7 +105,7 @@ const Footer: React.FC = () => {
       }
 
       setStatusType("success");
-      setStatusMessage("Message sent. I will get back to you soon.");
+      setStatusMessage("Message sent. We will get back to you soon.");
       setEmail("");
       setEmailError("");
       setSubject("");
