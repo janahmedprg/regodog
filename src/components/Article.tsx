@@ -1,4 +1,4 @@
-import React, {Suspense, useEffect, useRef, useState} from "react";
+import React, {Suspense, useEffect, useState} from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   db,
@@ -21,6 +21,7 @@ import { FaHeart, FaRegHeart } from "react-icons/fa";
 
 import "../styles/styles.css";
 import "../styles/tags.css";
+import ArticleHtmlRenderer from "./ArticleHtmlRenderer";
 
 const EditorApp = React.lazy(() => import("../editor/App"));
 
@@ -160,7 +161,6 @@ const Article: React.FC<ArticleProps> = ({ initialArticle }) => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const isSeededArticle = Boolean(initialArticle && initialArticle.id === id);
-  const articleContentRef = useRef<HTMLDivElement | null>(null);
   const seededHtmlFromDom =
     isBrowser && isSeededArticle && !initialArticle?.htmlContent
       ? document.querySelector(".article-html-content")?.innerHTML || ""
@@ -208,257 +208,14 @@ const Article: React.FC<ArticleProps> = ({ initialArticle }) => {
   const [editingCommentText, setEditingCommentText] = useState<string>("");
   const [isCommentEditing, setIsCommentEditing] = useState<boolean>(false);
 
-  useEffect(() => {
-    const container = articleContentRef.current;
-    if (!isBrowser || isEditing || !container || !htmlContent) {
-      return;
-    }
-
-    const getGalleryPayload = (galleryElement: HTMLElement): {
-      images: Array<{src: string; altText: string}>;
-      activeIndex: number;
-    } | null => {
-      const rawPayload = galleryElement.getAttribute("data-lexical-gallery");
-      if (rawPayload) {
-        try {
-          const parsed = JSON.parse(rawPayload) as {
-            images?: Array<{src?: string; altText?: string}>;
-            activeIndex?: number;
-          };
-          if (Array.isArray(parsed.images)) {
-            const normalized = parsed.images
-              .map((image) => {
-                if (!image || typeof image.src !== "string" || !image.src.trim()) {
-                  return null;
-                }
-                return {
-                  src: image.src.trim(),
-                  altText: typeof image.altText === "string" ? image.altText : "",
-                };
-              })
-              .filter((image): image is {src: string; altText: string} => Boolean(image));
-
-            const maxIndex = Math.max(0, normalized.length - 1);
-            const safeActiveIndex =
-              typeof parsed.activeIndex === "number"
-                ? Math.max(0, Math.min(Math.floor(parsed.activeIndex), maxIndex))
-                : 0;
-
-            return {images: normalized, activeIndex: safeActiveIndex};
-          }
-        } catch {
-          // Ignore invalid payloads.
-        }
-      }
-
-      const fallbackImages = Array.from(
-        galleryElement.querySelectorAll<HTMLImageElement>(".GalleryNode__thumbnail"),
-      )
-        .map((image) => ({
-          src: image.src,
-          altText: image.getAttribute("alt") || "",
-        }))
-        .filter((image) => image.src);
-
-      if (fallbackImages.length > 0) {
-        return {images: fallbackImages, activeIndex: 0};
-      }
-
-      const fallbackMain = galleryElement.querySelector<HTMLImageElement>("img");
-      if (!fallbackMain) {
-        return null;
-      }
-
-      return {
-        images: [{src: fallbackMain.src, altText: fallbackMain.alt || ""}],
-        activeIndex: 0,
-      };
-    };
-
-    const rebuildGalleryDOM = (galleryElement: HTMLElement) => {
-      const payload = getGalleryPayload(galleryElement);
-      if (!payload || payload.images.length === 0) {
-        return;
-      }
-
-      const activeIndex = Math.max(
-        0,
-        Math.min(payload.activeIndex, payload.images.length - 1),
-      );
-      galleryElement.classList.add("GalleryNode__container");
-      galleryElement.setAttribute("data-active-index", String(activeIndex));
-
-      const activeImage = payload.images[activeIndex];
-      const newMain = document.createElement("div");
-      newMain.className = "GalleryNode__main";
-      const img = document.createElement("img");
-      img.className = "GalleryNode__mainImage";
-      img.src = activeImage.src;
-      img.alt = activeImage.altText || `Gallery image ${activeIndex + 1}`;
-      img.loading = "lazy";
-      newMain.append(img);
-
-      const thumbnails = document.createElement("div");
-      thumbnails.className = "GalleryNode__thumbnails";
-
-      const leftArrow = document.createElement("button");
-      leftArrow.type = "button";
-      leftArrow.className = "GalleryNode__arrow";
-      leftArrow.dataset.galleryNav = "left";
-      leftArrow.setAttribute("aria-label", "Scroll thumbnails left");
-      leftArrow.textContent = "←";
-
-      const strip = document.createElement("div");
-      strip.className = "GalleryNode__thumbStrip";
-
-      payload.images.forEach((image, index) => {
-        const button = document.createElement("button");
-        button.type = "button";
-        button.className = "GalleryNode__thumbButton";
-        button.dataset.galleryThumbIndex = String(index);
-        button.dataset.galleryThumbSrc = image.src;
-        button.dataset.galleryThumbAlt = image.altText || `Gallery thumbnail ${index + 1}`;
-        button.setAttribute("aria-label", `Select image ${index + 1}`);
-
-        if (index === activeIndex) {
-          button.classList.add("GalleryNode__thumbButtonActive");
-        }
-
-        const thumb = document.createElement("img");
-        thumb.src = image.src;
-        thumb.alt = image.altText || `Gallery thumbnail ${index + 1}`;
-        thumb.className = "GalleryNode__thumbnail";
-        thumb.loading = "lazy";
-        button.append(thumb);
-        strip.append(button);
-      });
-
-      const rightArrow = document.createElement("button");
-      rightArrow.type = "button";
-      rightArrow.className = "GalleryNode__arrow";
-      rightArrow.dataset.galleryNav = "right";
-      rightArrow.setAttribute("aria-label", "Scroll thumbnails right");
-      rightArrow.textContent = "→";
-
-      thumbnails.append(leftArrow, strip, rightArrow);
-
-      galleryElement.innerHTML = "";
-      galleryElement.append(newMain, thumbnails);
-      galleryElement.querySelectorAll<HTMLButtonElement>(".GalleryNode__arrow").forEach((button) => {
-        button.disabled = false;
-      });
-    };
-
-    const setGalleryImageByIndex = (galleryElement: HTMLElement, index: number) => {
-      const strip = galleryElement.querySelector<HTMLElement>(".GalleryNode__thumbStrip");
-      const buttons = Array.from(
-        strip?.querySelectorAll<HTMLButtonElement>('[data-gallery-thumb-index]') || [],
-      );
-      if (!strip || buttons.length === 0) {
-        return;
-      }
-
-      const safeIndex = Math.max(0, Math.min(index, buttons.length - 1));
-      const button = buttons[safeIndex];
-      const imageSrc = button?.dataset.galleryThumbSrc || button?.querySelector("img")?.src || "";
-      const imageAlt =
-        button?.dataset.galleryThumbAlt ||
-        button?.querySelector("img")?.getAttribute("alt") ||
-        `Gallery image ${safeIndex + 1}`;
-      const mainImage = galleryElement.querySelector<HTMLImageElement>(".GalleryNode__mainImage");
-
-      if (!mainImage || !imageSrc) {
-        return;
-      }
-
-      mainImage.src = imageSrc;
-      mainImage.alt = imageAlt;
-
-      galleryElement
-        .querySelectorAll<HTMLElement>('[data-gallery-thumb-index]')
-        .forEach((thumbButton, i) =>
-          thumbButton.classList.toggle(
-            "GalleryNode__thumbButtonActive",
-            i === safeIndex,
-          ),
-        );
-      galleryElement.setAttribute("data-active-index", String(safeIndex));
-    };
-
-    const onGalleryClick = (event: MouseEvent) => {
-      const target = event.target as Element | null;
-      if (!target) {
-        return;
-      }
-
-      const galleryElement =
-        (target.closest(".GalleryNode__container, figure[data-lexical-gallery]") as HTMLElement | null);
-      if (!galleryElement) {
-        return;
-      }
-
-      const clickedThumb = target.closest(
-        "[data-gallery-thumb-index]",
-      ) as HTMLElement | null;
-      const clickedArrow = target.closest("[data-gallery-nav]") as HTMLElement | null;
-
-      if (clickedThumb) {
-        event.preventDefault();
-        const nextIndex = Number.parseInt(
-          clickedThumb.dataset.galleryThumbIndex || "0",
-          10,
-        );
-        if (!Number.isNaN(nextIndex)) {
-          setGalleryImageByIndex(galleryElement, nextIndex);
-        }
-        return;
-      }
-
-      if (clickedArrow) {
-        event.preventDefault();
-        const strip = galleryElement.querySelector<HTMLElement>(".GalleryNode__thumbStrip");
-        if (!strip) {
-          return;
-        }
-        const direction = clickedArrow.dataset.galleryNav;
-        const isLeft = direction === "left";
-        const step = isLeft ? -strip.clientWidth : strip.clientWidth;
-        strip.scrollBy({left: step || 160, behavior: "smooth"});
-      }
-    };
-
-    const galleries = Array.from(
-      container.querySelectorAll<HTMLElement>(
-        "figure[data-lexical-gallery], .GalleryNode__container",
-      ),
-    );
-
-    galleries.forEach((galleryElement) => {
-      rebuildGalleryDOM(galleryElement);
-      const initialIndex = Number.parseInt(
-        galleryElement.getAttribute("data-active-index") || "0",
-        10,
-      );
-      setGalleryImageByIndex(
-        galleryElement,
-        Number.isNaN(initialIndex) ? 0 : initialIndex,
-      );
-    });
-
-    container.addEventListener("click", onGalleryClick);
-
-    return () => {
-      container.removeEventListener("click", onGalleryClick);
-    };
-  }, [isBrowser, isEditing, htmlContent]);
-
   // --------------------------
   // Fetch article + file URLs
   // --------------------------
   useEffect(() => {
     if (
       isSeededArticle &&
-      (!initialArticle?.htmlContentUrl || Boolean(initialArticle.htmlContent))
+      !initialArticle?.htmlContentUrl &&
+      !initialArticle?.editorStateUrl
     ) {
       return;
     }
@@ -923,13 +680,13 @@ const Article: React.FC<ArticleProps> = ({ initialArticle }) => {
           </div>
 
           <div className="article-content">
-            <div ref={articleContentRef} className="article-html-content">
             {htmlContent ? (
-              <div dangerouslySetInnerHTML={{ __html: htmlContent }} />
+              <ArticleHtmlRenderer htmlContent={htmlContent} />
             ) : (
-              <p>{article.content}</p>
+              <div className="article-html-content">
+                <p>{article.content}</p>
+              </div>
             )}
-            </div>
           </div>
 
           <section className="article-interactions">
