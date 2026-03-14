@@ -127,12 +127,15 @@ function SaveArticleForm({
           if (onBeforeNavigate) {
             onBeforeNavigate();
           }
-          // Navigate to the article page (for new articles) or stay on page (for updates)
+          // Navigate to the article page (for new articles) or refresh the page after updates.
           if (!articleId) {
             navigate(`/article/${savedArticleId}`);
+            return;
           }
-          // For updates, we're already on the article page, so just close the modal
-          // and let the onBeforeNavigate callback handle UI updates (like setting isEditing to false)
+
+          if (typeof window !== "undefined") {
+            window.location.reload();
+          }
         },
         onError: (err) => {
           setIsSaving(false);
