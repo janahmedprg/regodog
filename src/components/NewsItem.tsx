@@ -15,6 +15,7 @@ export interface NewsItemProps {
   id?: string;
   createdAt?: any; // Firestore Timestamp or Date
   thumbnailUrl?: string;
+  thumbnailAltText?: string;
   thumbnailPositionX?: number;
   thumbnailPositionY?: number;
   newsFeedThumbnailPositionX?: number;
@@ -29,6 +30,7 @@ const NewsItem: React.FC<NewsItemProps> = ({
   link,
   createdAt,
   thumbnailUrl,
+  thumbnailAltText,
   thumbnailPositionX,
   thumbnailPositionY,
   newsFeedThumbnailPositionX,
@@ -100,7 +102,7 @@ const NewsItem: React.FC<NewsItemProps> = ({
         <div className="news-thumbnail">
           <img
             src={thumbnailUrl}
-            alt="Article thumbnail"
+            alt={thumbnailAltText || "Article thumbnail"}
             style={{
               objectPosition: `${newsFeedThumbnailPositionX ?? thumbnailPositionX ?? 50}% ${
                 newsFeedThumbnailPositionY ?? thumbnailPositionY ?? 50

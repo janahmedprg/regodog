@@ -30,6 +30,7 @@ interface ArticleData {
   title: string;
   tags?: string[];
   thumbnailUrl?: string;
+  thumbnailAltText?: string;
   thumbnailPositionX?: number;
   thumbnailPositionY?: number;
   newsFeedThumbnailPositionX?: number;
@@ -645,6 +646,7 @@ const Article: React.FC<ArticleProps> = ({ initialArticle }) => {
                 articleTitle={editedTitle}
                 articleTags={selectedTags}
                 articleThumbnailUrl={imagePreview || article.thumbnailUrl}
+                articleThumbnailAltText={article.thumbnailAltText}
                 articleThumbnailPositionX={article.thumbnailPositionX}
                 articleThumbnailPositionY={article.thumbnailPositionY}
                 newsFeedThumbnailPositionX={article.newsFeedThumbnailPositionX}
@@ -666,7 +668,7 @@ const Article: React.FC<ArticleProps> = ({ initialArticle }) => {
             <div className="article-thumbnail">
               <img
                 src={article.thumbnailUrl}
-                alt="Thumbnail"
+                alt={article.thumbnailAltText || "Thumbnail"}
                 style={{
                   objectPosition: `${article.thumbnailPositionX ?? 50}% ${
                     article.thumbnailPositionY ?? 50

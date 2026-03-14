@@ -26,7 +26,15 @@ const db = getFirestore(app);
 type RawNewsDocument = {
   title?: unknown;
   thumbnailUrl?: unknown;
+  thumbnailAltText?: unknown;
   embeddedImageUrls?: unknown;
+  editorStateUrl?: unknown;
+};
+
+type SitemapImageEntry = {
+  url: string;
+  title?: string;
+  caption?: string;
 };
 
 function isValidUrl(value: unknown): value is string {
@@ -45,6 +53,24 @@ function isValidUrl(value: unknown): value is string {
   }
 }
 
+function getStoragePathFromDownloadUrl(downloadUrl: string): string | null {
+  try {
+    const urlObj = new URL(downloadUrl);
+    const pathMatch = urlObj.pathname.match(/\/o\/(.+)$/);
+    if (!pathMatch) {
+      return null;
+    }
+    return decodeURIComponent(pathMatch[1]);
+  } catch {
+    return null;
+  }
+}
+
+function isArticleImageUrl(url: string): boolean {
+  const storagePath = getStoragePathFromDownloadUrl(url);
+  return typeof storagePath === "string" && storagePath.startsWith("article_images/");
+}
+
 function normalizeImageUrls(
   ...values: Array<string | undefined | null>
 ): string[] {
@@ -57,11 +83,81 @@ function normalizeImageUrls(
   return Array.from(urls);
 }
 
+function collectFromSerializedStateWithAlt(
+  node: unknown,
+  result: Map<string, string>,
+): void {
+  if (node === null || typeof node !== "object") {
+    return;
+  }
+
+  if (Array.isArray(node)) {
+    node.forEach((item) => collectFromSerializedStateWithAlt(item, result));
+    return;
+  }
+
+  const objectNode = node as Record<string, unknown>;
+  const src = objectNode.src;
+  if (typeof src === "string" && isValidUrl(src) && isArticleImageUrl(src)) {
+    const trimmedSrc = src.trim();
+    const altCandidate = objectNode.altText ?? objectNode.alt;
+    if (typeof altCandidate === "string") {
+      const altText = altCandidate.trim();
+      if (!result.has(trimmedSrc) || altText) {
+        result.set(trimmedSrc, altText);
+      }
+    } else if (!result.has(trimmedSrc)) {
+      result.set(trimmedSrc, "");
+    }
+  }
+
+  for (const value of Object.values(objectNode)) {
+    collectFromSerializedStateWithAlt(value, result);
+  }
+}
+
+async function extractImageEntriesFromEditorStateUrl(
+  editorStateUrl: string | undefined,
+): Promise<SitemapImageEntry[]> {
+  if (!editorStateUrl || !isValidUrl(editorStateUrl)) {
+    return [];
+  }
+
+  try {
+    const response = await fetch(editorStateUrl);
+    if (!response.ok) {
+      return [];
+    }
+
+    const payload = (await response.json()) as unknown;
+    const imageMap = new Map<string, string>();
+    collectFromSerializedStateWithAlt(payload, imageMap);
+
+    return Array.from(imageMap.entries())
+      .filter(([url]) => isArticleImageUrl(url))
+      .map(([url, altText]) => ({
+        url,
+        ...(altText ? { title: altText, caption: altText } : {}),
+      }));
+  } catch (error) {
+    console.warn("Error parsing editor state for sitemap image metadata:", error);
+    return [];
+  }
+}
+
 const startSiteMapGeneratorJob = async () => {
   try {
     const querySnapshot = await getDocs(collection(db, "news"));
-    const docs = querySnapshot.docs.map((doc) => {
+    const docs = await Promise.all(
+      querySnapshot.docs.map(async (doc) => {
       const data = doc.data() as RawNewsDocument;
+      const thumbnailUrl =
+        typeof data.thumbnailUrl === "string" ? data.thumbnailUrl : undefined;
+      const normalizedThumbnailUrl =
+        thumbnailUrl && isValidUrl(thumbnailUrl) ? new URL(thumbnailUrl).toString() : null;
+      const rawThumbnailAltText =
+        typeof data.thumbnailAltText === "string" ? data.thumbnailAltText : "";
+      const thumbnailAltText = rawThumbnailAltText.trim();
       const embeddedImageUrls =
         Array.isArray(data.embeddedImageUrls)
           ? data.embeddedImageUrls.filter((url): url is string =>
@@ -69,15 +165,42 @@ const startSiteMapGeneratorJob = async () => {
             )
           : [];
       const articleImageUrls = normalizeImageUrls(
-        typeof data.thumbnailUrl === "string" ? data.thumbnailUrl : undefined,
+        thumbnailUrl,
         ...embeddedImageUrls,
       );
+      const imageEntries = articleImageUrls.map((url) => {
+        if (normalizedThumbnailUrl && url === normalizedThumbnailUrl && thumbnailAltText) {
+          return {
+            url,
+            title: thumbnailAltText,
+            caption: thumbnailAltText,
+          };
+        }
+        return { url };
+      });
+
+      const editorStateImageEntries = await extractImageEntriesFromEditorStateUrl(
+        typeof data.editorStateUrl === "string" ? data.editorStateUrl : undefined,
+      );
+
+      const mergedImageEntries = new Map<string, SitemapImageEntry>();
+      imageEntries.forEach((entry) => {
+        mergedImageEntries.set(entry.url, entry);
+      });
+      editorStateImageEntries.forEach((entry) => {
+        const existing = mergedImageEntries.get(entry.url);
+        mergedImageEntries.set(
+          entry.url,
+          existing && existing.title ? existing : entry,
+        );
+      });
 
       return {
         id: doc.id,
-        images: articleImageUrls.map((url) => ({ url })),
+        images: Array.from(mergedImageEntries.values()),
       };
-    });
+    })
+    );
 
     // Array with the links
     const links = [

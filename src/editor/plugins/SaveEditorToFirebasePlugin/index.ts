@@ -217,6 +217,7 @@ export interface SaveEditorToFirebaseOptions {
   title: string;
   tags?: string[];
   thumbnailImage?: File | null;
+  thumbnailAltText?: string;
   thumbnailPositionX?: number;
   thumbnailPositionY?: number;
   newsFeedThumbnailPositionX?: number;
@@ -235,6 +236,7 @@ export async function saveEditorToFirebase(
     title,
     tags = [],
     thumbnailImage,
+    thumbnailAltText = "",
     thumbnailPositionX,
     thumbnailPositionY,
     newsFeedThumbnailPositionX,
@@ -408,6 +410,7 @@ export async function saveEditorToFirebase(
       htmlContentUrl: string;
       tags: string[];
       embeddedImageUrls: string[];
+      thumbnailAltText?: string;
       thumbnailPositionX?: number;
       thumbnailPositionY?: number;
       newsFeedThumbnailPositionX?: number;
@@ -456,6 +459,9 @@ export async function saveEditorToFirebase(
     const hasAnyThumbnailPayload = Boolean(
       thumbnailImage || existingThumbnailUrl || thumbnailUrl,
     );
+    if (hasAnyThumbnailPayload) {
+      articleData.thumbnailAltText = thumbnailAltText.trim();
+    }
     if (normalizedPositionX !== undefined && hasAnyThumbnailPayload) {
       articleData.thumbnailPositionX = normalizedPositionX;
     }

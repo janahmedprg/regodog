@@ -13,6 +13,7 @@ interface ArticleContextValue {
   articleTitle?: string;
   articleTags?: string[];
   articleThumbnailUrl?: string | null;
+  articleThumbnailAltText?: string;
   articleThumbnailPositionX?: number;
   articleThumbnailPositionY?: number;
   newsFeedThumbnailPositionX?: number;
@@ -28,6 +29,7 @@ export function ArticleContextProvider({
   articleTitle,
   articleTags,
   articleThumbnailUrl,
+  articleThumbnailAltText,
   articleThumbnailPositionX,
   articleThumbnailPositionY,
   newsFeedThumbnailPositionX,
@@ -39,6 +41,7 @@ export function ArticleContextProvider({
   articleTitle?: string;
   articleTags?: string[];
   articleThumbnailUrl?: string | null;
+  articleThumbnailAltText?: string;
   articleThumbnailPositionX?: number;
   articleThumbnailPositionY?: number;
   newsFeedThumbnailPositionX?: number;
@@ -57,6 +60,7 @@ export function ArticleContextProvider({
         articleTitle,
         articleTags,
         articleThumbnailUrl,
+        articleThumbnailAltText,
         articleThumbnailPositionX: resolvedThumbnailPositionX,
         articleThumbnailPositionY: resolvedThumbnailPositionY,
         newsFeedThumbnailPositionX: resolvedNewsFeedThumbnailPositionX,

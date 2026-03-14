@@ -42,6 +42,7 @@ interface AppProps {
   articleTitle?: string;
   articleTags?: string[];
   articleThumbnailUrl?: string | null;
+  articleThumbnailAltText?: string;
   articleThumbnailPositionX?: number;
   articleThumbnailPositionY?: number;
   newsFeedThumbnailPositionX?: number;
@@ -55,6 +56,7 @@ export default function App({
   articleTitle,
   articleTags,
   articleThumbnailUrl,
+  articleThumbnailAltText,
   articleThumbnailPositionX,
   articleThumbnailPositionY,
   newsFeedThumbnailPositionX,
@@ -90,6 +92,7 @@ export default function App({
         articleTitle={articleTitle}
         articleTags={articleTags}
         articleThumbnailUrl={articleThumbnailUrl}
+        articleThumbnailAltText={articleThumbnailAltText}
         articleThumbnailPositionX={articleThumbnailPositionX}
         articleThumbnailPositionY={articleThumbnailPositionY}
         newsFeedThumbnailPositionX={newsFeedThumbnailPositionX}

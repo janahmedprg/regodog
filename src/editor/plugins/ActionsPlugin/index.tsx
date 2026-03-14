@@ -34,6 +34,7 @@ interface SaveArticleFormProps {
   initialTitle?: string;
   initialTags?: string[];
   initialThumbnailUrl?: string | null;
+  initialThumbnailAltText?: string;
   initialThumbnailPositionX?: number;
   initialThumbnailPositionY?: number;
   initialNewsFeedPositionX?: number;
@@ -54,6 +55,7 @@ function SaveArticleForm({
   initialTitle = "",
   initialTags = [],
   initialThumbnailUrl = null,
+  initialThumbnailAltText = "",
   initialThumbnailPositionX = 50,
   initialThumbnailPositionY = 50,
   initialNewsFeedPositionX = 50,
@@ -65,6 +67,9 @@ function SaveArticleForm({
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(
     initialThumbnailUrl,
+  );
+  const [thumbnailAltText, setThumbnailAltText] = useState<string>(
+    initialThumbnailAltText,
   );
   const [activeDragTarget, setActiveDragTarget] = useState<
     "thumbnail" | "newsFeed" | null
@@ -126,6 +131,7 @@ function SaveArticleForm({
         title: title.trim(),
         tags: selectedTags,
         thumbnailImage: selectedImage,
+        thumbnailAltText: thumbnailAltText.trim(),
         thumbnailPositionX,
         thumbnailPositionY,
         newsFeedThumbnailPositionX: newsFeedPositionX,
@@ -333,11 +339,11 @@ function SaveArticleForm({
         </div>
       </div>
 
-      <div style={{ marginBottom: "15px" }}>
-        <label
-          htmlFor="article-thumbnail"
-          style={{ display: "block", marginBottom: "5px" }}
-        >
+        <div style={{ marginBottom: "15px" }}>
+          <label
+            htmlFor="article-thumbnail"
+            style={{ display: "block", marginBottom: "5px" }}
+          >
           Thumbnail Image (optional):
         </label>
         <input
@@ -347,10 +353,32 @@ function SaveArticleForm({
           onChange={handleImageChange}
           disabled={isSaving}
           style={{ marginBottom: "10px" }}
-        />
-        {imagePreview && (
-          <div
-            style={{
+            />
+            <label
+              htmlFor="article-thumbnail-alt"
+              style={{ display: "block", marginBottom: "5px", marginTop: "10px" }}
+            >
+              Thumbnail Alt Text (optional):
+            </label>
+            <input
+              id="article-thumbnail-alt"
+              type="text"
+              value={thumbnailAltText}
+              onChange={(event) => setThumbnailAltText(event.target.value)}
+              placeholder="Describe thumbnail for accessibility and SEO"
+              style={{
+                width: "100%",
+                padding: "8px",
+                fontSize: "14px",
+                border: "1px solid #ccc",
+                borderRadius: "4px",
+              }}
+              disabled={isSaving}
+              maxLength={220}
+            />
+            {imagePreview && (
+              <div
+                style={{
               marginTop: "10px",
               maxWidth: "280px",
             }}
@@ -618,6 +646,7 @@ export default function ActionsPlugin(): JSX.Element {
     articleTitle,
     articleTags,
     articleThumbnailUrl,
+    articleThumbnailAltText,
     articleThumbnailPositionX,
     articleThumbnailPositionY,
     newsFeedThumbnailPositionX,
@@ -640,6 +669,7 @@ export default function ActionsPlugin(): JSX.Element {
           initialTitle={articleTitle}
           initialTags={articleTags}
           initialThumbnailUrl={articleThumbnailUrl}
+          initialThumbnailAltText={articleThumbnailAltText}
           initialThumbnailPositionX={articleThumbnailPositionX}
           initialThumbnailPositionY={articleThumbnailPositionY}
           initialNewsFeedPositionX={newsFeedThumbnailPositionX}
@@ -656,6 +686,7 @@ export default function ActionsPlugin(): JSX.Element {
     articleTitle,
     articleTags,
     articleThumbnailUrl,
+    articleThumbnailAltText,
     articleThumbnailPositionX,
     articleThumbnailPositionY,
     newsFeedThumbnailPositionX,
