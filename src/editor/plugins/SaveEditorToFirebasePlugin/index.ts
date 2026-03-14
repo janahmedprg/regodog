@@ -26,9 +26,15 @@ import {
 
 import { v4 as uuidv4 } from "uuid";
 
-type SerializedEditorPayload = string | number | boolean | null | {
-  [key: string]: SerializedEditorPayload | SerializedEditorPayload[];
-};
+type SerializedEditorPayload =
+  | string
+  | number
+  | boolean
+  | null
+  | SerializedEditorPayload[]
+  | {
+      [key: string]: SerializedEditorPayload | SerializedEditorPayload[];
+    };
 
 type SerializableObject = Record<string, SerializedEditorPayload>;
 
@@ -294,7 +300,7 @@ export async function saveEditorToFirebase(
     const uploadCache = new Map<string, Promise<string>>();
     const normalizedState =
       (await normalizeSerializedEditorState(
-        editorState.toJSON() as SerializedEditorPayload,
+        editorState.toJSON() as unknown as SerializedEditorPayload,
         uniqueId,
         uploadCache,
       )) || editorState.toJSON();
@@ -401,6 +407,7 @@ export async function saveEditorToFirebase(
       editorStateUrl: string;
       htmlContentUrl: string;
       tags: string[];
+      embeddedImageUrls: string[];
       thumbnailPositionX?: number;
       thumbnailPositionY?: number;
       newsFeedThumbnailPositionX?: number;
