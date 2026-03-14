@@ -139,7 +139,7 @@ export default function GalleryComponent({
     if (!strip) {
       return;
     }
-    const offset = direction === 'left' ? -160 : 160;
+    const offset = direction === 'left' ? -192 : 192;
     strip.scrollBy({left: offset, behavior: 'smooth'});
   };
 
@@ -165,12 +165,13 @@ export default function GalleryComponent({
       <div className="GalleryNode__thumbnails">
         <button
           className="GalleryNode__arrow"
+          data-direction="left"
           disabled={!canScrollLeft}
           type="button"
           onClick={() => scroll('left')}
           aria-label="Scroll thumbnails left"
         >
-          ←
+          ‹
         </button>
         <div className="GalleryNode__thumbStrip" ref={stripRef}>
           {images.map((image, index) => {
@@ -199,12 +200,13 @@ export default function GalleryComponent({
         </div>
         <button
           className="GalleryNode__arrow"
+          data-direction="right"
           disabled={!canScrollRight}
           type="button"
           onClick={() => scroll('right')}
           aria-label="Scroll thumbnails right"
         >
-          →
+          ›
         </button>
       </div>
     </div>

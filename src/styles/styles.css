@@ -419,10 +419,11 @@ body {
 }
 
 .article-html-content .GalleryNode__container {
-  margin: 16px 0;
-  padding: 12px;
+  margin: 24px 0;
+  padding: 0;
   border-radius: 10px;
   background: transparent;
+  border: 0;
   box-shadow: none;
 }
 
@@ -433,59 +434,77 @@ body {
 
 .article-html-content .GalleryNode__mainImage {
   width: 100%;
-  height: min(420px, 48vw);
+  height: min(680px, 72vw);
   object-fit: contain;
   border-radius: 12px;
   display: block;
-  background: transparent;
+  background: none;
 }
 
 .article-html-content .GalleryNode__thumbnails {
-  margin-top: 10px;
+  margin-top: 14px;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
   justify-content: center;
 }
 
 .article-html-content .GalleryNode__arrow {
-  width: 30px;
-  height: 30px;
-  border: 1px solid #ccd8e6;
+  width: 44px;
+  height: 44px;
+  border: 0;
   border-radius: 50%;
-  background: #fff;
-  color: #233654;
+  background: transparent;
+  color: #111;
+  font-size: 26px;
+  line-height: 1;
+  padding: 0;
+  transition: color 0.2s ease, transform 0.15s ease;
   flex-shrink: 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
 }
 
+.article-html-content .GalleryNode__arrow:hover:not(:disabled) {
+  color: #000;
+  transform: translateX(1px);
+}
+
+.article-html-content .GalleryNode__arrow[data-direction='left']:hover:not(:disabled) {
+  transform: translateX(-1px);
+}
+
 .article-html-content .GalleryNode__arrow:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+  background: transparent;
+  color: #9a9a9a;
+  transform: none;
 }
 
 .article-html-content .GalleryNode__thumbStrip {
-  max-width: 490px;
+  max-width: 760px;
   width: 100%;
   overflow-x: auto;
   overflow-y: hidden;
   display: flex;
-  gap: 8px;
+  gap: 12px;
+  border: 1px solid #e6e6e6;
+  border-radius: 12px;
+  padding: 8px;
   scrollbar-width: thin;
-  scrollbar-color: #8ea0af transparent;
-  padding-bottom: 2px;
+  scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
   scroll-snap-type: x proximity;
 }
 
 .article-html-content .GalleryNode__thumbButton {
-  border: 2px solid transparent;
+  border: 0;
   border-radius: 10px;
-  background: #fff;
+  background: transparent;
   padding: 0;
-  width: 92px;
-  height: 54px;
+  width: 132px;
+  height: 78px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -496,19 +515,21 @@ body {
 
 .article-html-content .GalleryNode__thumbButton:focus,
 .article-html-content .GalleryNode__thumbButton:hover {
-  border-color: #5e7ec6;
+  opacity: 0.85;
 }
 
 .article-html-content .GalleryNode__thumbButtonActive {
-  border-color: #2f6fd6;
+  opacity: 1;
+  border: 2px solid #222222;
+  border-radius: 10px;
 }
 
 .article-html-content .GalleryNode__thumbnail {
-  width: 88px;
-  height: 50px;
+  width: 128px;
+  height: 74px;
   object-fit: contain;
   border-radius: 6px;
-  background: transparent;
+  background: none;
 }
 
 .article-html-content .GalleryNode__empty {
@@ -518,8 +539,44 @@ body {
   align-items: center;
   justify-content: center;
   color: #566573;
-  background: #fff;
+  background: transparent;
   border-radius: 8px;
+  border: 0;
+}
+
+@media (max-width: 640px) {
+  .article-html-content .GalleryNode__container {
+    margin: 14px 0;
+  }
+
+  .article-html-content .GalleryNode__arrow {
+    width: 34px;
+    height: 34px;
+    font-size: 22px;
+  }
+
+  .article-html-content .GalleryNode__thumbnails {
+    gap: 8px;
+  }
+
+  .article-html-content .GalleryNode__thumbStrip {
+    max-width: 100%;
+    gap: 8px;
+  }
+
+  .article-html-content .GalleryNode__thumbButton {
+    width: 104px;
+    height: 62px;
+  }
+
+  .article-html-content .GalleryNode__thumbnail {
+    width: 100px;
+    height: 58px;
+  }
+
+  .article-html-content .GalleryNode__mainImage {
+    height: min(460px, 80vw);
+  }
 }
 
 .article-interactions {
