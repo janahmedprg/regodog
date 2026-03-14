@@ -418,6 +418,32 @@ body {
   overflow: hidden;
 }
 
+.article-html-content [data-lexical-layout-container] {
+  display: grid;
+  gap: 10px;
+  margin: 10px 0;
+  min-width: 0;
+}
+
+.article-html-content [data-lexical-layout-item] {
+  padding: 8px 16px;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.article-html-content .PlaygroundEditorTheme__layoutContainer {
+  display: grid;
+  gap: 10px;
+  margin: 10px 0;
+  min-width: 0;
+}
+
+.article-html-content .PlaygroundEditorTheme__layoutItem {
+  padding: 8px 16px;
+  min-width: 0;
+  max-width: 100%;
+}
+
 .article-html-content .GalleryNode__container {
   margin: 24px 0;
   padding: 0;
