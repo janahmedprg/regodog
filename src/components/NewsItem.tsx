@@ -15,6 +15,8 @@ export interface NewsItemProps {
   id?: string;
   createdAt?: any; // Firestore Timestamp or Date
   thumbnailUrl?: string;
+  thumbnailPositionX?: number;
+  thumbnailPositionY?: number;
 }
 
 const NewsItem: React.FC<NewsItemProps> = ({
@@ -25,6 +27,8 @@ const NewsItem: React.FC<NewsItemProps> = ({
   link,
   createdAt,
   thumbnailUrl,
+  thumbnailPositionX,
+  thumbnailPositionY,
 }) => {
   const navigate = useNavigate();
 
@@ -90,7 +94,15 @@ const NewsItem: React.FC<NewsItemProps> = ({
     <div className="news-item" onClick={handleReadArticle}>
       {thumbnailUrl && (
         <div className="news-thumbnail">
-          <img src={thumbnailUrl} alt="Article thumbnail" />
+          <img
+            src={thumbnailUrl}
+            alt="Article thumbnail"
+            style={{
+              objectPosition: `${thumbnailPositionX ?? 50}% ${
+                thumbnailPositionY ?? 50
+              }%`,
+            }}
+          />
         </div>
       )}
 

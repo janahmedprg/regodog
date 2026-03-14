@@ -29,6 +29,8 @@ interface ArticleData {
   title: string;
   tags?: string[];
   thumbnailUrl?: string;
+  thumbnailPositionX?: number;
+  thumbnailPositionY?: number;
   editorStateUrl?: string;
   htmlContentUrl?: string;
   content?: string;
@@ -881,6 +883,8 @@ const Article: React.FC<ArticleProps> = ({ initialArticle }) => {
                 articleTitle={editedTitle}
                 articleTags={selectedTags}
                 articleThumbnailUrl={imagePreview || article.thumbnailUrl}
+                articleThumbnailPositionX={article.thumbnailPositionX}
+                articleThumbnailPositionY={article.thumbnailPositionY}
                 onBeforeNavigate={() => setIsEditing(false)}
               />
             </Suspense>
@@ -896,7 +900,15 @@ const Article: React.FC<ArticleProps> = ({ initialArticle }) => {
         <>
           {article.thumbnailUrl && (
             <div className="article-thumbnail">
-              <img src={article.thumbnailUrl} alt="Thumbnail" />
+              <img
+                src={article.thumbnailUrl}
+                alt="Thumbnail"
+                style={{
+                  objectPosition: `${article.thumbnailPositionX ?? 50}% ${
+                    article.thumbnailPositionY ?? 50
+                  }%`,
+                }}
+              />
             </div>
           )}
 

@@ -10,7 +10,7 @@ import type { LexicalEditor } from "lexical";
 import type { JSX } from "react";
 
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
-import { useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { useArticleContext } from "../../context/ArticleContext";
@@ -34,7 +34,13 @@ interface SaveArticleFormProps {
   initialTitle?: string;
   initialTags?: string[];
   initialThumbnailUrl?: string | null;
+  initialThumbnailPositionX?: number;
+  initialThumbnailPositionY?: number;
   onBeforeNavigate?: () => void;
+}
+
+function clampPercent(value: number): number {
+  return Math.max(0, Math.min(100, Math.round(value * 100) / 100));
 }
 
 function SaveArticleForm({
@@ -46,6 +52,8 @@ function SaveArticleForm({
   initialTitle = "",
   initialTags = [],
   initialThumbnailUrl = null,
+  initialThumbnailPositionX = 50,
+  initialThumbnailPositionY = 50,
   onBeforeNavigate,
 }: SaveArticleFormProps): JSX.Element {
   const [title, setTitle] = useState(initialTitle);
@@ -54,8 +62,20 @@ function SaveArticleForm({
   const [imagePreview, setImagePreview] = useState<string | null>(
     initialThumbnailUrl,
   );
+  const [thumbnailPositionX, setThumbnailPositionX] = useState<number>(
+    clampPercent(initialThumbnailPositionX),
+  );
+  const [thumbnailPositionY, setThumbnailPositionY] = useState<number>(
+    clampPercent(initialThumbnailPositionY),
+  );
+  const [isDragging, setIsDragging] = useState(false);
+  const previewRef = useRef<HTMLDivElement | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const bannerAspect = Math.max(
+    0.5,
+    (typeof window === "undefined" ? 100 / 420 : window.innerWidth / 420),
+  );
 
   const availableTags = Object.values(HeaderTags).map((tag: string) => tag);
 
@@ -69,6 +89,8 @@ function SaveArticleForm({
     const file = event.target.files?.[0];
     if (file) {
       setSelectedImage(file);
+      setThumbnailPositionX(50);
+      setThumbnailPositionY(50);
       const reader = new FileReader();
       reader.onload = (e) => {
         setImagePreview(e.target?.result as string);
@@ -92,6 +114,8 @@ function SaveArticleForm({
         title: title.trim(),
         tags: selectedTags,
         thumbnailImage: selectedImage,
+        thumbnailPositionX,
+        thumbnailPositionY,
         existingThumbnailUrl: initialThumbnailUrl, // Preserve existing thumbnail if no new image
         articleId: articleId, // Pass articleId to update existing article
         onSuccess: (savedArticleId) => {
@@ -128,6 +152,62 @@ function SaveArticleForm({
       );
     }
   };
+
+  const updatePositionFromPointer = useCallback(
+    (clientX: number, clientY: number) => {
+      const preview = previewRef.current;
+      if (!preview) {
+        return;
+      }
+
+      const rect = preview.getBoundingClientRect();
+      const nextX = clampPercent(
+        ((clientX - rect.left) / Math.max(1, rect.width)) * 100,
+      );
+      const nextY = clampPercent(
+        ((clientY - rect.top) / Math.max(1, rect.height)) * 100,
+      );
+      setThumbnailPositionX(nextX);
+      setThumbnailPositionY(nextY);
+    },
+    [],
+  );
+
+  useEffect(() => {
+    if (!isDragging) {
+      return;
+    }
+
+    const handleMove = (event: PointerEvent) => {
+      updatePositionFromPointer(event.clientX, event.clientY);
+    };
+    const stopDrag = () => {
+      setIsDragging(false);
+    };
+
+    window.addEventListener("pointermove", handleMove);
+    window.addEventListener("pointerup", stopDrag);
+    window.addEventListener("pointercancel", stopDrag);
+
+    return () => {
+      window.removeEventListener("pointermove", handleMove);
+      window.removeEventListener("pointerup", stopDrag);
+      window.removeEventListener("pointercancel", stopDrag);
+    };
+  }, [isDragging, updatePositionFromPointer]);
+
+  const handlePointerDown = useCallback(
+    (event: React.PointerEvent<HTMLDivElement>) => {
+      if (!imagePreview || isSaving) {
+        return;
+      }
+
+      event.preventDefault();
+      setIsDragging(true);
+      updatePositionFromPointer(event.clientX, event.clientY);
+    },
+    [imagePreview, isSaving, updatePositionFromPointer],
+  );
 
   return (
     <div style={{ padding: "20px", minWidth: "400px" }}>
@@ -199,17 +279,97 @@ function SaveArticleForm({
           <div
             style={{
               marginTop: "10px",
-              maxWidth: "200px",
-              maxHeight: "200px",
-              overflow: "hidden",
-              borderRadius: "4px",
+              maxWidth: "280px",
             }}
           >
-            <img
-              src={imagePreview}
-              alt="Thumbnail preview"
-              style={{ width: "100%", height: "auto" }}
-            />
+            <div
+              ref={previewRef}
+              onPointerDown={handlePointerDown}
+              style={{
+                position: "relative",
+                width: "100%",
+                aspectRatio: `${bannerAspect} / 1`,
+                borderRadius: "6px",
+                overflow: "hidden",
+                border: "1px solid #ddd",
+                background: "#f0f0f0",
+                cursor: isSaving ? "not-allowed" : "grab",
+              }}
+            >
+              <img
+                src={imagePreview}
+                alt="Thumbnail preview"
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "cover",
+                  objectPosition: `${thumbnailPositionX}% ${thumbnailPositionY}%`,
+                  pointerEvents: "none",
+                }}
+              />
+              <div
+                style={{
+                  position: "absolute",
+                  inset: "8px",
+                  border: "1px dashed rgba(255, 255, 255, 0.75)",
+                  pointerEvents: "none",
+                  opacity: 0.7,
+                }}
+              />
+            </div>
+            <div style={{ marginTop: "8px", fontSize: "12px", color: "#555" }}>
+              Drag inside the preview to move the thumbnail focal point.
+            </div>
+            <label
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                fontSize: "12px",
+                marginTop: "10px",
+              }}
+            >
+              Horizontal
+              <input
+                type="range"
+                min={0}
+                max={100}
+                step={1}
+                value={thumbnailPositionX}
+                onChange={(event) =>
+                  setThumbnailPositionX(clampPercent(Number(event.target.value)))
+                }
+                disabled={isSaving}
+              />
+              <span style={{ minWidth: "40px", textAlign: "right" }}>
+                {Math.round(thumbnailPositionX)}%
+              </span>
+            </label>
+            <label
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                fontSize: "12px",
+                marginTop: "6px",
+              }}
+            >
+              Vertical
+              <input
+                type="range"
+                min={0}
+                max={100}
+                step={1}
+                value={thumbnailPositionY}
+                onChange={(event) =>
+                  setThumbnailPositionY(clampPercent(Number(event.target.value)))
+                }
+                disabled={isSaving}
+              />
+              <span style={{ minWidth: "40px", textAlign: "right" }}>
+                {Math.round(thumbnailPositionY)}%
+              </span>
+            </label>
           </div>
         )}
       </div>
@@ -293,6 +453,8 @@ export default function ActionsPlugin(): JSX.Element {
     articleTitle,
     articleTags,
     articleThumbnailUrl,
+    articleThumbnailPositionX,
+    articleThumbnailPositionY,
     onBeforeNavigate,
   } = useArticleContext();
 
@@ -311,6 +473,8 @@ export default function ActionsPlugin(): JSX.Element {
           initialTitle={articleTitle}
           initialTags={articleTags}
           initialThumbnailUrl={articleThumbnailUrl}
+          initialThumbnailPositionX={articleThumbnailPositionX}
+          initialThumbnailPositionY={articleThumbnailPositionY}
           onBeforeNavigate={onBeforeNavigate}
         />
       );

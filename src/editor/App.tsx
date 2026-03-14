@@ -42,6 +42,8 @@ interface AppProps {
   articleTitle?: string;
   articleTags?: string[];
   articleThumbnailUrl?: string | null;
+  articleThumbnailPositionX?: number;
+  articleThumbnailPositionY?: number;
   onBeforeNavigate?: () => void;
 }
 
@@ -51,6 +53,8 @@ export default function App({
   articleTitle,
   articleTags,
   articleThumbnailUrl,
+  articleThumbnailPositionX,
+  articleThumbnailPositionY,
   onBeforeNavigate,
 }: AppProps = {}): JSX.Element {
   const {
@@ -78,12 +82,14 @@ export default function App({
 
   return (
     <ArticleContextProvider
-      articleId={articleId}
-      articleTitle={articleTitle}
-      articleTags={articleTags}
-      articleThumbnailUrl={articleThumbnailUrl}
-      onBeforeNavigate={onBeforeNavigate}
-    >
+        articleId={articleId}
+        articleTitle={articleTitle}
+        articleTags={articleTags}
+        articleThumbnailUrl={articleThumbnailUrl}
+        articleThumbnailPositionX={articleThumbnailPositionX}
+        articleThumbnailPositionY={articleThumbnailPositionY}
+        onBeforeNavigate={onBeforeNavigate}
+      >
       <LexicalCollaboration>
         <LexicalExtensionComposer extension={app} contentEditable={null}>
           <SharedHistoryContext>

@@ -13,6 +13,8 @@ interface ArticleContextValue {
   articleTitle?: string;
   articleTags?: string[];
   articleThumbnailUrl?: string | null;
+  articleThumbnailPositionX?: number;
+  articleThumbnailPositionY?: number;
   onBeforeNavigate?: () => void;
 }
 
@@ -24,6 +26,8 @@ export function ArticleContextProvider({
   articleTitle,
   articleTags,
   articleThumbnailUrl,
+  articleThumbnailPositionX,
+  articleThumbnailPositionY,
   onBeforeNavigate,
 }: {
   children: ReactNode;
@@ -31,8 +35,13 @@ export function ArticleContextProvider({
   articleTitle?: string;
   articleTags?: string[];
   articleThumbnailUrl?: string | null;
+  articleThumbnailPositionX?: number;
+  articleThumbnailPositionY?: number;
   onBeforeNavigate?: () => void;
 }) {
+  const resolvedThumbnailPositionX = articleThumbnailPositionX ?? 50;
+  const resolvedThumbnailPositionY = articleThumbnailPositionY ?? 50;
+
   return (
     <ArticleContext.Provider
       value={{
@@ -40,6 +49,8 @@ export function ArticleContextProvider({
         articleTitle,
         articleTags,
         articleThumbnailUrl,
+        articleThumbnailPositionX: resolvedThumbnailPositionX,
+        articleThumbnailPositionY: resolvedThumbnailPositionY,
         onBeforeNavigate,
       }}
     >
@@ -51,4 +62,3 @@ export function ArticleContextProvider({
 export function useArticleContext(): ArticleContextValue {
   return useContext(ArticleContext);
 }
-

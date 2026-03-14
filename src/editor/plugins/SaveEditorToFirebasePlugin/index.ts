@@ -30,6 +30,8 @@ export interface SaveEditorToFirebaseOptions {
   title: string;
   tags?: string[];
   thumbnailImage?: File | null;
+  thumbnailPositionX?: number;
+  thumbnailPositionY?: number;
   existingThumbnailUrl?: string | null; // Existing thumbnail URL to preserve if no new image is uploaded
   articleId?: string; // If provided, will update existing article instead of creating new one
   onSuccess?: (articleId: string) => void;
@@ -44,6 +46,8 @@ export async function saveEditorToFirebase(
     title,
     tags = [],
     thumbnailImage,
+    thumbnailPositionX,
+    thumbnailPositionY,
     existingThumbnailUrl,
     articleId,
     onSuccess,
@@ -154,11 +158,13 @@ export async function saveEditorToFirebase(
       thumbnailUrl = newUrl;
     }
 
-    const articleData: {
+  const articleData: {
       title: string;
       editorStateUrl: string;
       htmlContentUrl: string;
       tags: string[];
+      thumbnailPositionX?: number;
+      thumbnailPositionY?: number;
       thumbnailUrl?: string | null;
       lastUpdated: Date;
       author?: string;
@@ -178,6 +184,25 @@ export async function saveEditorToFirebase(
     } else if (articleId && existingThumbnailUrl === null) {
       // If updating and explicitly setting to null, include it
       articleData.thumbnailUrl = null;
+    }
+
+    const normalizedPositionX =
+      typeof thumbnailPositionX === "number" && Number.isFinite(thumbnailPositionX)
+        ? Math.max(0, Math.min(100, Math.round(thumbnailPositionX)))
+        : undefined;
+    const normalizedPositionY =
+      typeof thumbnailPositionY === "number" && Number.isFinite(thumbnailPositionY)
+        ? Math.max(0, Math.min(100, Math.round(thumbnailPositionY)))
+        : undefined;
+
+    const hasAnyThumbnailPayload = Boolean(
+      thumbnailImage || existingThumbnailUrl || thumbnailUrl,
+    );
+    if (normalizedPositionX !== undefined && hasAnyThumbnailPayload) {
+      articleData.thumbnailPositionX = normalizedPositionX;
+    }
+    if (normalizedPositionY !== undefined && hasAnyThumbnailPayload) {
+      articleData.thumbnailPositionY = normalizedPositionY;
     }
 
     let documentId: string;
@@ -203,4 +228,3 @@ export async function saveEditorToFirebase(
     throw err;
   }
 }
-

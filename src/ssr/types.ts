@@ -7,6 +7,8 @@ export interface SSRNewsItem {
   createdAt?: number | null;
   lastUpdated?: number | null;
   thumbnailUrl?: string;
+  thumbnailPositionX?: number;
+  thumbnailPositionY?: number;
 }
 
 export interface SSRArticle {
@@ -14,6 +16,8 @@ export interface SSRArticle {
   title: string;
   tags?: string[];
   thumbnailUrl?: string;
+  thumbnailPositionX?: number;
+  thumbnailPositionY?: number;
   editorStateUrl?: string;
   htmlContentUrl?: string;
   content?: string;

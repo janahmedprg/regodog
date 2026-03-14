@@ -335,6 +335,8 @@ const NewsFeed: React.FC<NewsFeedProps> = ({ tag, initialNewsItems }) => {
             link={item.id}
             createdAt={item.createdAt}
             thumbnailUrl={item.thumbnailUrl}
+            thumbnailPositionX={item.thumbnailPositionX}
+            thumbnailPositionY={item.thumbnailPositionY}
           />
         ))}
       </div>
