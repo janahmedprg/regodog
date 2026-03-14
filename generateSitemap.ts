@@ -97,7 +97,6 @@ const startSiteMapGeneratorJob = async () => {
           fs.mkdirSync(folder, { recursive: true });
         }
       });
-      }
 
       // Create sitemap
       const stream = new SitemapStream({ hostname: "https://regodog.com" });
