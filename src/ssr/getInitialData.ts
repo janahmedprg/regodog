@@ -26,6 +26,8 @@ type RawNewsRecord = {
   thumbnailUrl?: string;
   thumbnailPositionX?: number;
   thumbnailPositionY?: number;
+  newsFeedThumbnailPositionX?: number;
+  newsFeedThumbnailPositionY?: number;
   tags?: string[];
   editorStateUrl?: string;
 };
@@ -191,6 +193,14 @@ function toRawNewsRecord(document: FirestoreDocument): RawNewsRecord {
   const thumbnailPositionY =
     (firestoreValueToJs(fields.thumbnailPositionY) as number | undefined) ||
     undefined;
+  const newsFeedThumbnailPositionX =
+    (firestoreValueToJs(fields.newsFeedThumbnailPositionX) as
+      | number
+      | undefined) || undefined;
+  const newsFeedThumbnailPositionY =
+    (firestoreValueToJs(fields.newsFeedThumbnailPositionY) as
+      | number
+      | undefined) || undefined;
   const editorStateUrl =
     (firestoreValueToJs(fields.editorStateUrl) as string | undefined) || undefined;
 
@@ -209,6 +219,8 @@ function toRawNewsRecord(document: FirestoreDocument): RawNewsRecord {
     thumbnailUrl,
     thumbnailPositionX,
     thumbnailPositionY,
+    newsFeedThumbnailPositionX,
+    newsFeedThumbnailPositionY,
     tags,
     editorStateUrl,
   };
@@ -317,6 +329,8 @@ async function fetchArticleById(id: string): Promise<SSRArticle | undefined> {
     thumbnailUrl: sourceArticle.thumbnailUrl,
     thumbnailPositionX: sourceArticle.thumbnailPositionX,
     thumbnailPositionY: sourceArticle.thumbnailPositionY,
+    newsFeedThumbnailPositionX: sourceArticle.newsFeedThumbnailPositionX,
+    newsFeedThumbnailPositionY: sourceArticle.newsFeedThumbnailPositionY,
     editorStateUrl: sourceArticle.editorStateUrl,
     htmlContentUrl: sourceArticle.htmlContentUrl,
     content: sourceArticle.content || "",

@@ -32,6 +32,8 @@ export interface SaveEditorToFirebaseOptions {
   thumbnailImage?: File | null;
   thumbnailPositionX?: number;
   thumbnailPositionY?: number;
+  newsFeedThumbnailPositionX?: number;
+  newsFeedThumbnailPositionY?: number;
   existingThumbnailUrl?: string | null; // Existing thumbnail URL to preserve if no new image is uploaded
   articleId?: string; // If provided, will update existing article instead of creating new one
   onSuccess?: (articleId: string) => void;
@@ -48,6 +50,8 @@ export async function saveEditorToFirebase(
     thumbnailImage,
     thumbnailPositionX,
     thumbnailPositionY,
+    newsFeedThumbnailPositionX,
+    newsFeedThumbnailPositionY,
     existingThumbnailUrl,
     articleId,
     onSuccess,
@@ -165,6 +169,8 @@ export async function saveEditorToFirebase(
       tags: string[];
       thumbnailPositionX?: number;
       thumbnailPositionY?: number;
+      newsFeedThumbnailPositionX?: number;
+      newsFeedThumbnailPositionY?: number;
       thumbnailUrl?: string | null;
       lastUpdated: Date;
       author?: string;
@@ -194,6 +200,16 @@ export async function saveEditorToFirebase(
       typeof thumbnailPositionY === "number" && Number.isFinite(thumbnailPositionY)
         ? Math.max(0, Math.min(100, Math.round(thumbnailPositionY)))
         : undefined;
+    const normalizedNewsFeedPositionX =
+      typeof newsFeedThumbnailPositionX === "number" &&
+      Number.isFinite(newsFeedThumbnailPositionX)
+        ? Math.max(0, Math.min(100, Math.round(newsFeedThumbnailPositionX)))
+        : undefined;
+    const normalizedNewsFeedPositionY =
+      typeof newsFeedThumbnailPositionY === "number" &&
+      Number.isFinite(newsFeedThumbnailPositionY)
+        ? Math.max(0, Math.min(100, Math.round(newsFeedThumbnailPositionY)))
+        : undefined;
 
     const hasAnyThumbnailPayload = Boolean(
       thumbnailImage || existingThumbnailUrl || thumbnailUrl,
@@ -203,6 +219,12 @@ export async function saveEditorToFirebase(
     }
     if (normalizedPositionY !== undefined && hasAnyThumbnailPayload) {
       articleData.thumbnailPositionY = normalizedPositionY;
+    }
+    if (normalizedNewsFeedPositionX !== undefined && hasAnyThumbnailPayload) {
+      articleData.newsFeedThumbnailPositionX = normalizedNewsFeedPositionX;
+    }
+    if (normalizedNewsFeedPositionY !== undefined && hasAnyThumbnailPayload) {
+      articleData.newsFeedThumbnailPositionY = normalizedNewsFeedPositionY;
     }
 
     let documentId: string;

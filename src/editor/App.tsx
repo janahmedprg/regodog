@@ -44,6 +44,8 @@ interface AppProps {
   articleThumbnailUrl?: string | null;
   articleThumbnailPositionX?: number;
   articleThumbnailPositionY?: number;
+  newsFeedThumbnailPositionX?: number;
+  newsFeedThumbnailPositionY?: number;
   onBeforeNavigate?: () => void;
 }
 
@@ -55,6 +57,8 @@ export default function App({
   articleThumbnailUrl,
   articleThumbnailPositionX,
   articleThumbnailPositionY,
+  newsFeedThumbnailPositionX,
+  newsFeedThumbnailPositionY,
   onBeforeNavigate,
 }: AppProps = {}): JSX.Element {
   const {
@@ -88,6 +92,8 @@ export default function App({
         articleThumbnailUrl={articleThumbnailUrl}
         articleThumbnailPositionX={articleThumbnailPositionX}
         articleThumbnailPositionY={articleThumbnailPositionY}
+        newsFeedThumbnailPositionX={newsFeedThumbnailPositionX}
+        newsFeedThumbnailPositionY={newsFeedThumbnailPositionY}
         onBeforeNavigate={onBeforeNavigate}
       >
       <LexicalCollaboration>

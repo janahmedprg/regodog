@@ -15,6 +15,8 @@ interface ArticleContextValue {
   articleThumbnailUrl?: string | null;
   articleThumbnailPositionX?: number;
   articleThumbnailPositionY?: number;
+  newsFeedThumbnailPositionX?: number;
+  newsFeedThumbnailPositionY?: number;
   onBeforeNavigate?: () => void;
 }
 
@@ -28,6 +30,8 @@ export function ArticleContextProvider({
   articleThumbnailUrl,
   articleThumbnailPositionX,
   articleThumbnailPositionY,
+  newsFeedThumbnailPositionX,
+  newsFeedThumbnailPositionY,
   onBeforeNavigate,
 }: {
   children: ReactNode;
@@ -37,10 +41,14 @@ export function ArticleContextProvider({
   articleThumbnailUrl?: string | null;
   articleThumbnailPositionX?: number;
   articleThumbnailPositionY?: number;
+  newsFeedThumbnailPositionX?: number;
+  newsFeedThumbnailPositionY?: number;
   onBeforeNavigate?: () => void;
 }) {
   const resolvedThumbnailPositionX = articleThumbnailPositionX ?? 50;
   const resolvedThumbnailPositionY = articleThumbnailPositionY ?? 50;
+  const resolvedNewsFeedThumbnailPositionX = newsFeedThumbnailPositionX ?? 50;
+  const resolvedNewsFeedThumbnailPositionY = newsFeedThumbnailPositionY ?? 50;
 
   return (
     <ArticleContext.Provider
@@ -51,6 +59,8 @@ export function ArticleContextProvider({
         articleThumbnailUrl,
         articleThumbnailPositionX: resolvedThumbnailPositionX,
         articleThumbnailPositionY: resolvedThumbnailPositionY,
+        newsFeedThumbnailPositionX: resolvedNewsFeedThumbnailPositionX,
+        newsFeedThumbnailPositionY: resolvedNewsFeedThumbnailPositionY,
         onBeforeNavigate,
       }}
     >

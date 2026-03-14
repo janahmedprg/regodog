@@ -32,6 +32,8 @@ interface ArticleData {
   thumbnailUrl?: string;
   thumbnailPositionX?: number;
   thumbnailPositionY?: number;
+  newsFeedThumbnailPositionX?: number;
+  newsFeedThumbnailPositionY?: number;
   editorStateUrl?: string;
   htmlContentUrl?: string;
   content?: string;
@@ -642,6 +644,8 @@ const Article: React.FC<ArticleProps> = ({ initialArticle }) => {
                 articleThumbnailUrl={imagePreview || article.thumbnailUrl}
                 articleThumbnailPositionX={article.thumbnailPositionX}
                 articleThumbnailPositionY={article.thumbnailPositionY}
+                newsFeedThumbnailPositionX={article.newsFeedThumbnailPositionX}
+                newsFeedThumbnailPositionY={article.newsFeedThumbnailPositionY}
                 onBeforeNavigate={() => setIsEditing(false)}
               />
             </Suspense>

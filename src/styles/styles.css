@@ -1442,12 +1442,15 @@ body {
 .news-thumbnail {
   margin-bottom: 15px;
   text-align: center;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
 }
 
 .news-thumbnail img {
   width: 100%;
-  height: 200px;
+  height: 100%;
   object-fit: cover;
+  object-position: inherit;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   transition: transform 0.3s ease;
@@ -1469,7 +1472,8 @@ body {
 .article-thumbnail img {
   width: 100%;
   max-width: 100%;
-  height: 420px;
+  aspect-ratio: 4 / 1;
+  height: auto;
   object-fit: cover;
   border-radius: 0;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
@@ -1583,7 +1587,7 @@ body {
   }
   
   .news-thumbnail img {
-    height: 150px;
+    height: 100%;
   }
   
   .image-preview img {

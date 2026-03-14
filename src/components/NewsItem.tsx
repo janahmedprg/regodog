@@ -17,6 +17,8 @@ export interface NewsItemProps {
   thumbnailUrl?: string;
   thumbnailPositionX?: number;
   thumbnailPositionY?: number;
+  newsFeedThumbnailPositionX?: number;
+  newsFeedThumbnailPositionY?: number;
 }
 
 const NewsItem: React.FC<NewsItemProps> = ({
@@ -29,6 +31,8 @@ const NewsItem: React.FC<NewsItemProps> = ({
   thumbnailUrl,
   thumbnailPositionX,
   thumbnailPositionY,
+  newsFeedThumbnailPositionX,
+  newsFeedThumbnailPositionY,
 }) => {
   const navigate = useNavigate();
 
@@ -98,8 +102,8 @@ const NewsItem: React.FC<NewsItemProps> = ({
             src={thumbnailUrl}
             alt="Article thumbnail"
             style={{
-              objectPosition: `${thumbnailPositionX ?? 50}% ${
-                thumbnailPositionY ?? 50
+              objectPosition: `${newsFeedThumbnailPositionX ?? thumbnailPositionX ?? 50}% ${
+                newsFeedThumbnailPositionY ?? thumbnailPositionY ?? 50
               }%`,
             }}
           />

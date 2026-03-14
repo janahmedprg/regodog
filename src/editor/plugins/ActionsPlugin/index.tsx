@@ -36,6 +36,8 @@ interface SaveArticleFormProps {
   initialThumbnailUrl?: string | null;
   initialThumbnailPositionX?: number;
   initialThumbnailPositionY?: number;
+  initialNewsFeedPositionX?: number;
+  initialNewsFeedPositionY?: number;
   onBeforeNavigate?: () => void;
 }
 
@@ -54,6 +56,8 @@ function SaveArticleForm({
   initialThumbnailUrl = null,
   initialThumbnailPositionX = 50,
   initialThumbnailPositionY = 50,
+  initialNewsFeedPositionX = 50,
+  initialNewsFeedPositionY = 50,
   onBeforeNavigate,
 }: SaveArticleFormProps): JSX.Element {
   const [title, setTitle] = useState(initialTitle);
@@ -68,14 +72,16 @@ function SaveArticleForm({
   const [thumbnailPositionY, setThumbnailPositionY] = useState<number>(
     clampPercent(initialThumbnailPositionY),
   );
+  const [newsFeedPositionX, setNewsFeedPositionX] = useState<number>(
+    clampPercent(initialNewsFeedPositionX),
+  );
+  const [newsFeedPositionY, setNewsFeedPositionY] = useState<number>(
+    clampPercent(initialNewsFeedPositionY),
+  );
   const [isDragging, setIsDragging] = useState(false);
   const previewRef = useRef<HTMLDivElement | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
-  const bannerAspect = Math.max(
-    0.5,
-    (typeof window === "undefined" ? 100 / 420 : window.innerWidth / 420),
-  );
 
   const availableTags = Object.values(HeaderTags).map((tag: string) => tag);
 
@@ -91,6 +97,8 @@ function SaveArticleForm({
       setSelectedImage(file);
       setThumbnailPositionX(50);
       setThumbnailPositionY(50);
+      setNewsFeedPositionX(50);
+      setNewsFeedPositionY(50);
       const reader = new FileReader();
       reader.onload = (e) => {
         setImagePreview(e.target?.result as string);
@@ -116,6 +124,8 @@ function SaveArticleForm({
         thumbnailImage: selectedImage,
         thumbnailPositionX,
         thumbnailPositionY,
+        newsFeedThumbnailPositionX: newsFeedPositionX,
+        newsFeedThumbnailPositionY: newsFeedPositionY,
         existingThumbnailUrl: initialThumbnailUrl, // Preserve existing thumbnail if no new image
         articleId: articleId, // Pass articleId to update existing article
         onSuccess: (savedArticleId) => {
@@ -285,43 +295,81 @@ function SaveArticleForm({
               maxWidth: "280px",
             }}
           >
-            <div
-              ref={previewRef}
-              onPointerDown={handlePointerDown}
-              style={{
-                position: "relative",
-                width: "100%",
-                aspectRatio: `${bannerAspect} / 1`,
-                borderRadius: "6px",
-                overflow: "hidden",
-                border: "1px solid #ddd",
-                background: "#f0f0f0",
-                cursor: isSaving ? "not-allowed" : "grab",
-              }}
-            >
-              <img
-                src={imagePreview}
-                alt="Thumbnail preview"
-                style={{
-                  width: "100%",
-                  height: "100%",
-                  objectFit: "cover",
-                  objectPosition: `${thumbnailPositionX}% ${thumbnailPositionY}%`,
-                  pointerEvents: "none",
-                }}
-              />
+            <div style={{ marginBottom: "16px" }}>
               <div
                 style={{
-                  position: "absolute",
-                  inset: "8px",
-                  border: "1px dashed rgba(255, 255, 255, 0.75)",
-                  pointerEvents: "none",
-                  opacity: 0.7,
+                  fontSize: "12px",
+                  color: "#555",
+                  marginBottom: "6px",
+                  fontWeight: 600,
                 }}
-              />
+              >
+                Article banner preview (4:1)
+              </div>
+              <div
+                ref={previewRef}
+                onPointerDown={handlePointerDown}
+                style={{
+                  position: "relative",
+                  width: "100%",
+                  aspectRatio: "4/1",
+                  borderRadius: "6px",
+                  overflow: "hidden",
+                  border: "1px solid #ddd",
+                  background: "#f0f0f0",
+                  cursor: isSaving ? "not-allowed" : "grab",
+                }}
+              >
+                <img
+                  src={imagePreview}
+                  alt="Article banner thumbnail preview"
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "cover",
+                    objectPosition: `${thumbnailPositionX}% ${thumbnailPositionY}%`,
+                    pointerEvents: "none",
+                  }}
+                />
+              </div>
+              <div style={{ marginTop: "8px", fontSize: "12px", color: "#555" }}>
+                Drag inside the preview to move article banner focus.
+              </div>
             </div>
-            <div style={{ marginTop: "8px", fontSize: "12px", color: "#555" }}>
-              Drag inside the preview to move the thumbnail focal point.
+            <div>
+              <div
+                style={{
+                  fontSize: "12px",
+                  color: "#555",
+                  marginBottom: "6px",
+                  fontWeight: 600,
+                }}
+              >
+                News feed preview (16:9)
+              </div>
+              <div
+                style={{
+                  position: "relative",
+                  width: "100%",
+                  aspectRatio: "16/9",
+                  borderRadius: "6px",
+                  overflow: "hidden",
+                  border: "1px solid #ddd",
+                  background: "#f0f0f0",
+                }}
+              >
+                <img
+                  src={imagePreview}
+                  alt="News feed thumbnail preview"
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "cover",
+                    objectPosition: `${newsFeedPositionX}% ${newsFeedPositionY}%`,
+                    pointerEvents: "none",
+                  }}
+                />
+              </div>
             </div>
             <label
               style={{
@@ -329,10 +377,10 @@ function SaveArticleForm({
                 alignItems: "center",
                 gap: "8px",
                 fontSize: "12px",
-                marginTop: "10px",
+                marginTop: "6px",
               }}
             >
-              Horizontal
+              Horizontal (Article Banner)
               <input
                 type="range"
                 min={0}
@@ -340,7 +388,9 @@ function SaveArticleForm({
                 step={1}
                 value={thumbnailPositionX}
                 onChange={(event) =>
-                  setThumbnailPositionX(clampPercent(Number(event.target.value)))
+                  setThumbnailPositionX(
+                    clampPercent(Number(event.target.value)),
+                  )
                 }
                 disabled={isSaving}
               />
@@ -357,7 +407,7 @@ function SaveArticleForm({
                 marginTop: "6px",
               }}
             >
-              Vertical
+              Vertical (Article Banner)
               <input
                 type="range"
                 min={0}
@@ -365,12 +415,68 @@ function SaveArticleForm({
                 step={1}
                 value={thumbnailPositionY}
                 onChange={(event) =>
-                  setThumbnailPositionY(clampPercent(Number(event.target.value)))
+                  setThumbnailPositionY(
+                    clampPercent(Number(event.target.value)),
+                  )
                 }
                 disabled={isSaving}
               />
               <span style={{ minWidth: "40px", textAlign: "right" }}>
                 {Math.round(thumbnailPositionY)}%
+              </span>
+            </label>
+            <label
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                fontSize: "12px",
+                marginTop: "6px",
+              }}
+            >
+              Horizontal (News Feed)
+              <input
+                type="range"
+                min={0}
+                max={100}
+                step={1}
+                value={newsFeedPositionX}
+                onChange={(event) =>
+                  setNewsFeedPositionX(
+                    clampPercent(Number(event.target.value)),
+                  )
+                }
+                disabled={isSaving}
+              />
+              <span style={{ minWidth: "40px", textAlign: "right" }}>
+                {Math.round(newsFeedPositionX)}%
+              </span>
+            </label>
+            <label
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                fontSize: "12px",
+                marginTop: "6px",
+              }}
+            >
+              Vertical (News Feed)
+              <input
+                type="range"
+                min={0}
+                max={100}
+                step={1}
+                value={newsFeedPositionY}
+                onChange={(event) =>
+                  setNewsFeedPositionY(
+                    clampPercent(Number(event.target.value)),
+                  )
+                }
+                disabled={isSaving}
+              />
+              <span style={{ minWidth: "40px", textAlign: "right" }}>
+                {Math.round(newsFeedPositionY)}%
               </span>
             </label>
           </div>
@@ -458,6 +564,8 @@ export default function ActionsPlugin(): JSX.Element {
     articleThumbnailUrl,
     articleThumbnailPositionX,
     articleThumbnailPositionY,
+    newsFeedThumbnailPositionX,
+    newsFeedThumbnailPositionY,
     onBeforeNavigate,
   } = useArticleContext();
 
@@ -478,6 +586,8 @@ export default function ActionsPlugin(): JSX.Element {
           initialThumbnailUrl={articleThumbnailUrl}
           initialThumbnailPositionX={articleThumbnailPositionX}
           initialThumbnailPositionY={articleThumbnailPositionY}
+          initialNewsFeedPositionX={newsFeedThumbnailPositionX}
+          initialNewsFeedPositionY={newsFeedThumbnailPositionY}
           onBeforeNavigate={onBeforeNavigate}
         />
       );
@@ -490,6 +600,10 @@ export default function ActionsPlugin(): JSX.Element {
     articleTitle,
     articleTags,
     articleThumbnailUrl,
+    articleThumbnailPositionX,
+    articleThumbnailPositionY,
+    newsFeedThumbnailPositionX,
+    newsFeedThumbnailPositionY,
     onBeforeNavigate,
   ]);
 

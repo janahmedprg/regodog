@@ -9,6 +9,8 @@ export interface SSRNewsItem {
   thumbnailUrl?: string;
   thumbnailPositionX?: number;
   thumbnailPositionY?: number;
+  newsFeedThumbnailPositionX?: number;
+  newsFeedThumbnailPositionY?: number;
 }
 
 export interface SSRArticle {
@@ -18,6 +20,8 @@ export interface SSRArticle {
   thumbnailUrl?: string;
   thumbnailPositionX?: number;
   thumbnailPositionY?: number;
+  newsFeedThumbnailPositionX?: number;
+  newsFeedThumbnailPositionY?: number;
   editorStateUrl?: string;
   htmlContentUrl?: string;
   content?: string;
