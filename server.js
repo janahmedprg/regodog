@@ -27,6 +27,7 @@ const MIME_TYPES = {
   ".woff": "font/woff",
   ".woff2": "font/woff2",
 };
+const FALLBACK_STATIC_FILES = new Set(["/sitemap.xml"]);
 
 function injectSSRData(html, initialData) {
   const serializedData = JSON.stringify(initialData ?? {}).replace(/</g, "\\u003c");
@@ -90,6 +91,40 @@ async function serveStatic(req, res, pathname) {
   }
 }
 
+async function serveRootStaticFallback(req, res, pathname) {
+  if (!FALLBACK_STATIC_FILES.has(pathname)) {
+    return false;
+  }
+
+  const distRoot = path.resolve(root, "dist");
+  const filePath = path.resolve(distRoot, `.${pathname}`);
+
+  if (!filePath.startsWith(distRoot)) {
+    return false;
+  }
+
+  try {
+    const stats = await fs.stat(filePath);
+    if (!stats.isFile()) {
+      return false;
+    }
+
+    const data = await fs.readFile(filePath);
+    const ext = path.extname(filePath);
+    const contentType = MIME_TYPES[ext] || "application/octet-stream";
+
+    res.writeHead(200, {
+      "Content-Length": data.byteLength,
+      "Content-Type": contentType,
+      "Cache-Control": "public, max-age=3600",
+    });
+    res.end(data);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 const server = http.createServer(async (req, res) => {
   const requestUrl = req.url || "/";
   const pathname = requestUrl.split("?")[0] || "/";
@@ -130,6 +165,11 @@ const server = http.createServer(async (req, res) => {
     if (isAssetRequest) {
       const served = await serveStatic(req, res, pathname);
       if (served) {
+        return;
+      }
+
+      const fallbackServed = await serveRootStaticFallback(req, res, pathname);
+      if (fallbackServed) {
         return;
       }
     }

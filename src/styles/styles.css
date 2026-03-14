@@ -1,4 +1,10 @@
 /* General Styles */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
 body {
   background-color: rgb(243, 240, 236);
   font-family: 'Helvetica Neue', Arial, sans-serif;
@@ -215,10 +221,22 @@ body {
 /* Container Styles */
 .container {
   max-width: 1440px;
-  min-height: 100vh;
+  flex: 1;
+  min-height: 0;
+  width: 100%;
   margin: 0 auto;
   padding: 0px 10px 10px 10px;
   background-color: rgb(243, 240, 236);
+}
+
+.page-content {
+  flex: 1;
+}
+
+.page-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
 /*   Styles */
@@ -1462,9 +1480,9 @@ body {
 
 /* Article Thumbnail Styles */
 .article-thumbnail {
-  margin: 0 calc(50% - 50vw) 30px;
-  width: 100vw;
-  max-width: 100vw;
+  margin: 0 auto 30px;
+  width: 100%;
+  max-width: 100%;
   overflow: hidden;
   text-align: center;
 }
@@ -1603,6 +1621,10 @@ body {
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65);
   padding: 40px 20px;
   margin-top: 60px;
+  width: 100%;
+  margin-left: 0;
+  margin-right: 0;
+  margin-top: auto;
 }
 
 .footer-content {

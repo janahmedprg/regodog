@@ -1534,6 +1534,17 @@ button.toolbar-item.active i {
   background-size: contain;
 }
 
+.toolbar-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 8px;
+  color: #777;
+  font-size: 14px;
+  line-height: 20px;
+  white-space: nowrap;
+}
+
 .toolbar i.chevron-down,
 .toolbar-item i.chevron-down {
   margin-top: 3px;

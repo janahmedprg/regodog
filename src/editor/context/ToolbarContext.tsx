@@ -18,6 +18,7 @@ import React, {
   useMemo,
   useState,
 } from "react";
+import { DEFAULT_LINE_HEIGHT } from "../plugins/ToolbarPlugin/lineHeight";
 
 export const MIN_ALLOWED_FONT_SIZE = 8;
 export const MAX_ALLOWED_FONT_SIZE = 72;
@@ -60,6 +61,7 @@ const INITIAL_TOOLBAR_STATE = {
   fontSize: `${DEFAULT_FONT_SIZE}px`,
   // Font size input value - for controlled input
   fontSizeInputValue: `${DEFAULT_FONT_SIZE}`,
+  lineHeight: DEFAULT_LINE_HEIGHT,
   isBold: false,
   isCode: false,
   isHighlight: false,

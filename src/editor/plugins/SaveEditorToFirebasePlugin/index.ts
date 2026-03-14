@@ -26,6 +26,187 @@ import {
 
 import { v4 as uuidv4 } from "uuid";
 
+type SerializedEditorPayload = string | number | boolean | null | {
+  [key: string]: SerializedEditorPayload | SerializedEditorPayload[];
+};
+
+type SerializableObject = Record<string, SerializedEditorPayload>;
+
+function isBase64ImageSrc(src: string): boolean {
+  return /^data:image\/[a-zA-Z0-9.+-]+;base64,/.test(src);
+}
+
+function getStoragePathFromDownloadUrl(downloadUrl: string): string | null {
+  try {
+    const urlObj = new URL(downloadUrl);
+    const pathMatch = urlObj.pathname.match(/\/o\/(.+)$/);
+    if (!pathMatch) {
+      return null;
+    }
+    return decodeURIComponent(pathMatch[1]);
+  } catch {
+    return null;
+  }
+}
+
+function isArticleImageUrl(url: string): boolean {
+  const storagePath = getStoragePathFromDownloadUrl(url);
+  return typeof storagePath === "string" && storagePath.startsWith("article_images/");
+}
+
+function collectArticleImageUrls(
+  node: SerializedEditorPayload,
+  result: Set<string>,
+): void {
+  if (node === null || typeof node !== "object") {
+    return;
+  }
+
+  if (Array.isArray(node)) {
+    node.forEach((item) => collectArticleImageUrls(item, result));
+    return;
+  }
+
+  for (const [key, value] of Object.entries(node)) {
+    if (
+      key === "src" &&
+      typeof value === "string" &&
+      isArticleImageUrl(value)
+    ) {
+      result.add(value);
+    }
+    collectArticleImageUrls(value as SerializedEditorPayload, result);
+  }
+}
+
+function collectFromSerializedState(node: SerializedEditorPayload): string[] {
+  const result = new Set<string>();
+  collectArticleImageUrls(node, result);
+  return Array.from(result);
+}
+
+function safeDeleteStorageUrl(downloadUrl: string): void {
+  const storagePath = getStoragePathFromDownloadUrl(downloadUrl);
+  if (!storagePath) {
+    return;
+  }
+
+  const objectRef = ref(storage, storagePath);
+  deleteObject(objectRef).catch((error) => {
+    console.warn("Error deleting unused image:", error);
+  });
+}
+
+function imageExtensionFromDataUrl(dataUrl: string): string {
+  const match = dataUrl.match(/^data:image\/([a-zA-Z0-9.+-]+);base64,/);
+  if (!match) {
+    return "png";
+  }
+
+  const mime = match[1].toLowerCase();
+  if (mime === "jpeg") {
+    return "jpg";
+  }
+  if (mime === "svg+xml") {
+    return "svg";
+  }
+
+  return mime.replace(/[^a-z0-9]/g, "");
+}
+
+async function uploadDataImageToStorage(
+  dataUrl: string,
+  articleId: string,
+  uploadCache: Map<string, Promise<string>>,
+): Promise<string> {
+  const cachedUpload = uploadCache.get(dataUrl);
+  if (cachedUpload) {
+    return cachedUpload;
+  }
+
+  const uploadPromise = (async () => {
+    const imageBlob = await fetch(dataUrl).then((response) => {
+      if (!response.ok) {
+        throw new Error("Failed to decode embedded image data URL");
+      }
+      return response.blob();
+    });
+
+    const extension = imageExtensionFromDataUrl(dataUrl);
+    const imageRef = ref(storage, `article_images/${articleId}/${uuidv4()}.${extension}`);
+    const snapshot = await uploadBytes(imageRef, imageBlob);
+    return getDownloadURL(snapshot.ref);
+  })();
+
+  uploadCache.set(dataUrl, uploadPromise);
+  return uploadPromise;
+}
+
+async function normalizeSerializedEditorState(
+  node: SerializedEditorPayload,
+  articleId: string,
+  uploadCache: Map<string, Promise<string>>,
+): Promise<SerializedEditorPayload> {
+  if (node === null || typeof node !== "object") {
+    return node;
+  }
+
+  if (Array.isArray(node)) {
+    return Promise.all(
+      node.map((child) => normalizeSerializedEditorState(child, articleId, uploadCache)),
+    );
+  }
+
+  const normalized: { [key: string]: SerializedEditorPayload } = {};
+
+  for (const [key, value] of Object.entries(node)) {
+    const shouldUpload =
+      (key === "src" && typeof value === "string" && isBase64ImageSrc(value)) ||
+      (key === "images" && Array.isArray(value));
+
+    if (shouldUpload && key === "src" && typeof value === "string") {
+      normalized[key] = await uploadDataImageToStorage(
+        value,
+        articleId,
+        uploadCache,
+      );
+      continue;
+    }
+
+    if (key === "images" && Array.isArray(value)) {
+      normalized[key] = await Promise.all(
+        value.map(async (image) => {
+          if (
+            image !== null &&
+            typeof image === "object" &&
+            "src" in image
+          ) {
+            const nextImage = { ...(image as Record<string, SerializedEditorPayload>) };
+            const src = nextImage.src;
+
+            if (typeof src === "string" && isBase64ImageSrc(src)) {
+              nextImage.src = await uploadDataImageToStorage(src, articleId, uploadCache);
+            }
+
+            return nextImage;
+          }
+
+          return image as SerializedEditorPayload;
+        }),
+      );
+      continue;
+    }
+
+    normalized[key] = await normalizeSerializedEditorState(
+      value as SerializedEditorPayload,
+      articleId,
+      uploadCache,
+    );
+  }
+
+  return normalized;
+}
+
 export interface SaveEditorToFirebaseOptions {
   title: string;
   tags?: string[];
@@ -68,6 +249,7 @@ export async function saveEditorToFirebase(
     // If updating an existing article, fetch it to get old file URLs for deletion
     let oldEditorStateUrl: string | null = null;
     let oldHtmlContentUrl: string | null = null;
+    let oldEmbeddedImageUrls: string[] = [];
     
     if (articleId) {
       try {
@@ -77,6 +259,28 @@ export async function saveEditorToFirebase(
           const articleData = articleSnap.data();
           oldEditorStateUrl = articleData.editorStateUrl || null;
           oldHtmlContentUrl = articleData.htmlContentUrl || null;
+          if (Array.isArray(articleData.embeddedImageUrls)) {
+            oldEmbeddedImageUrls = articleData.embeddedImageUrls.filter(
+              (entry: unknown) => typeof entry === "string",
+            );
+          }
+
+          if (
+            oldEmbeddedImageUrls.length === 0 &&
+            typeof oldEditorStateUrl === "string"
+          ) {
+            try {
+              const response = await fetch(oldEditorStateUrl);
+              if (response.ok) {
+                const oldSerialized = (await response.text()) as SerializedEditorPayload;
+                oldEmbeddedImageUrls = collectFromSerializedState(
+                  JSON.parse(oldSerialized as string),
+                );
+              }
+            } catch (err) {
+              console.warn("Error parsing old editor state for image cleanup:", err);
+            }
+          }
         }
       } catch (err) {
         console.warn("Error fetching existing article:", err);
@@ -84,10 +288,17 @@ export async function saveEditorToFirebase(
       }
     }
 
-    // Get editor state and serialize it
+    // Get editor state and normalize inline image data URLs
     const uniqueId = `${Date.now()}-${uuidv4()}`;
     const editorState = editor.getEditorState();
-    const serializedState = JSON.stringify(editorState.toJSON());
+    const uploadCache = new Map<string, Promise<string>>();
+    const normalizedState =
+      (await normalizeSerializedEditorState(
+        editorState.toJSON() as SerializedEditorPayload,
+        uniqueId,
+        uploadCache,
+      )) || editorState.toJSON();
+    const serializedState = JSON.stringify(normalizedState);
 
     const editorStateBlob = new Blob([serializedState], {
       type: "application/json",
@@ -103,11 +314,30 @@ export async function saveEditorToFirebase(
       htmlContent = $generateHtmlFromNodes(editor, null);
     });
 
+    const replacementEntries = await Promise.all(
+      Array.from(uploadCache.entries()).map(async ([from, toPromise]) => [
+        from,
+        await toPromise,
+      ]),
+    );
+    for (const [from, to] of replacementEntries) {
+      htmlContent = htmlContent.split(from).join(to as string);
+    }
+
     const htmlBlob = new Blob([htmlContent], { type: 'text/html' });
 
     const htmlRef = ref(storage, `editor_html/${uniqueId}.html`);
     const htmlSnapshot = await uploadBytes(htmlRef, htmlBlob);
     const htmlContentUrl = await getDownloadURL(htmlSnapshot.ref);
+
+    const currentEmbeddedImageUrls = collectFromSerializedState(
+      normalizedState as SerializedEditorPayload,
+    );
+    const oldImageSet = new Set(oldEmbeddedImageUrls.filter(isArticleImageUrl));
+    const currentImageSet = new Set(currentEmbeddedImageUrls);
+    const removedImageUrls = Array.from(oldImageSet).filter(
+      (url) => !currentImageSet.has(url),
+    );
 
     // Delete old editor state and HTML files if they exist
     if (oldEditorStateUrl) {
@@ -140,6 +370,10 @@ export async function saveEditorToFirebase(
         console.warn("Error deleting old HTML content:", err);
       }
     }
+
+    removedImageUrls.forEach((imageUrl) => {
+      safeDeleteStorageUrl(imageUrl);
+    });
 
 
     // Upload thumbnail image if provided, otherwise preserve existing one
@@ -180,6 +414,7 @@ export async function saveEditorToFirebase(
       editorStateUrl: editorStateUrl,
       htmlContentUrl,
       tags,
+      embeddedImageUrls: currentEmbeddedImageUrls,
       lastUpdated: new Date(),
       author: auth.currentUser?.uid || "anonymous",
     };

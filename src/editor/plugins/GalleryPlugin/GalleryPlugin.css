@@ -1,0 +1,65 @@
+.GalleryPlugin__scrollArea {
+  max-height: min(75vh, calc(100vh - 160px));
+  overflow-y: auto;
+  padding-right: 28px;
+  scrollbar-width: thin;
+  scrollbar-color: #8ea0af transparent;
+  scrollbar-gutter: stable;
+}
+
+.GalleryPlugin__scrollArea::-webkit-scrollbar {
+  width: 10px;
+}
+
+.GalleryPlugin__scrollArea::-webkit-scrollbar-thumb {
+  border-radius: 8px;
+  background-color: rgba(128, 128, 128, 0.45);
+}
+
+.GalleryPlugin__uploadRow {
+  background: #fff;
+  user-select: none;
+}
+
+.GalleryPlugin__uploadRow:hover {
+  background: #fbfcfe;
+}
+
+.GalleryPlugin__uploadRow:focus-within {
+  border-color: #8ea0af;
+  box-shadow: 0 0 0 1px rgba(142, 160, 175, 0.25);
+}
+
+.GalleryPlugin__moveButtons {
+  margin-left: auto;
+  display: flex;
+  gap: 4px;
+}
+
+.GalleryPlugin__moveButtons button {
+  width: 28px;
+  height: 28px;
+  line-height: 1;
+  border: 1px solid #d1d8e0;
+  border-radius: 6px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.GalleryPlugin__moveButtons button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.GalleryPlugin__moveButtons button:hover:not(:disabled) {
+  background: #f4f7fa;
+}
+
+.GalleryPlugin__removeButton {
+  color: #b42318;
+  border: 1px solid #ffdad6;
+}
+
+.GalleryPlugin__removeButton:hover:not(:disabled) {
+  background: #fff1f2;
+}

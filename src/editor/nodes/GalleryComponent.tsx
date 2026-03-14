@@ -1,8 +1,7 @@
 /**
  * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
+ * This source code is licensed under the MIT license found in the root directory of this source tree.
  *
  */
 
@@ -21,8 +20,10 @@ import {
 } from 'lexical';
 import {type RefObject, useCallback, useEffect, useRef, useState} from 'react';
 
+import useModal from '../hooks/useModal';
+import InsertGalleryDialog from '../ui/GalleryInsertDialog';
 import joinClasses from '../utils/joinClasses';
-import {$isGalleryNode, GalleryImage} from './GalleryNode';
+import {$createGalleryNode, $isGalleryNode, GalleryImage} from './GalleryNode';
 
 function clamp(value: number, min: number, max: number): number {
   if (value < min) {
@@ -87,6 +88,7 @@ export default function GalleryComponent({
   const [isSelected, setSelected, clearSelection] = useLexicalNodeSelection(nodeKey);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const stripRef = useRef<HTMLDivElement | null>(null);
+  const [modal, showModal] = useModal();
 
   const normalizedActiveIndex = clamp(
     activeIndex,
@@ -131,6 +133,17 @@ export default function GalleryComponent({
       if ($isGalleryNode(node)) {
         node.setActiveIndex(nextIndex);
       }
+    });
+  };
+
+  const replaceGalleryImages = (nextImages: GalleryImage[]) => {
+    editor.update(() => {
+      const node = $getNodeByKey(nodeKey);
+      if (!$isGalleryNode(node)) {
+        return;
+      }
+      const activeGalleryIndex = node.getActiveIndex();
+      node.replace($createGalleryNode(nextImages, activeGalleryIndex));
     });
   };
 
@@ -209,6 +222,26 @@ export default function GalleryComponent({
           ›
         </button>
       </div>
+      <div className="GalleryNode__editActions">
+        <button
+          className="GalleryNode__editButton"
+          onClick={() => {
+            showModal('Edit Gallery', (onClose) => (
+              <InsertGalleryDialog
+                activeEditor={editor}
+                onClose={onClose}
+                initialImages={images}
+                submitButtonText="Update Gallery"
+                onSubmit={replaceGalleryImages}
+              />
+            ));
+          }}
+          type="button"
+        >
+          Edit gallery
+        </button>
+      </div>
+      {modal}
     </div>
   );
 }

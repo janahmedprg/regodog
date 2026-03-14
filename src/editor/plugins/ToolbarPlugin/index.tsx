@@ -98,6 +98,10 @@ import { InsertPollDialog } from "../PollPlugin";
 import { SHORTCUTS } from "../ShortcutsPlugin/shortcuts";
 import { InsertTableDialog } from "../TablePlugin";
 import FontSize, { parseFontSizeForToolbar } from "./fontSize";
+import LineHeight, {
+  DEFAULT_LINE_HEIGHT,
+  parseLineHeightForToolbar,
+} from "./lineHeight";
 import {
   clearFormatting,
   formatBulletList,
@@ -765,6 +769,10 @@ export default function ToolbarPlugin({
         "fontSize",
         $getSelectionStyleValueForProperty(selection, "font-size", "15px")
       );
+      updateToolbarState(
+        "lineHeight",
+        $getSelectionStyleValueForProperty(selection, "line-height", DEFAULT_LINE_HEIGHT)
+      );
       updateToolbarState("isLowercase", selection.hasFormat("lowercase"));
       updateToolbarState("isUppercase", selection.hasFormat("uppercase"));
       updateToolbarState("isCapitalize", selection.hasFormat("capitalize"));
@@ -1087,6 +1095,15 @@ export default function ToolbarPlugin({
             selectionFontSize={parseFontSizeForToolbar(
               toolbarState.fontSize
             ).slice(0, -2)}
+            editor={activeEditor}
+            disabled={!isEditable}
+          />
+          <Divider />
+          <span className="toolbar-label">Line spacing</span>
+          <LineHeight
+            selectionLineHeight={parseLineHeightForToolbar(
+              toolbarState.lineHeight
+            )}
             editor={activeEditor}
             disabled={!isEditable}
           />

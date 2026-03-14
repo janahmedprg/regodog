@@ -36,6 +36,7 @@ const MIME_TYPES: Record<string, string> = {
   ".woff": "font/woff",
   ".woff2": "font/woff2",
 };
+const FALLBACK_STATIC_FILES = new Set(["/sitemap.xml"]);
 
 const CONTACT_FORM_RECIPIENT = "romana.regodog@gmail.com";
 
@@ -210,6 +211,40 @@ async function serveStaticAsset(
   }
 }
 
+async function serveRootStaticFallback(
+  res: Parameters<Parameters<typeof onRequest>[0]>[1],
+  pathname: string
+) {
+  if (!FALLBACK_STATIC_FILES.has(pathname)) {
+    return false;
+  }
+
+  const distRoot = path.resolve(projectRoot(), "dist");
+  const filePath = path.resolve(distRoot, `.${pathname}`);
+  if (!filePath.startsWith(distRoot)) {
+    return false;
+  }
+
+  try {
+    const stats = await fs.stat(filePath);
+    if (!stats.isFile()) {
+      return false;
+    }
+
+    const data = await fs.readFile(filePath);
+    const ext = path.extname(filePath);
+    const contentType = MIME_TYPES[ext] || "application/octet-stream";
+
+    res.set("Content-Type", contentType);
+    res.set("Content-Length", String(data.byteLength));
+    res.set("Cache-Control", "public, max-age=3600");
+    res.status(200).send(data);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export const ssrApp = onRequest(async (req, res) => {
   try {
     await initSSR();
@@ -221,6 +256,11 @@ export const ssrApp = onRequest(async (req, res) => {
     if (isAssetRequest) {
       const served = await serveStaticAsset(res, pathname);
       if (served) {
+        return;
+      }
+
+      const fallbackServed = await serveRootStaticFallback(res, pathname);
+      if (fallbackServed) {
         return;
       }
 

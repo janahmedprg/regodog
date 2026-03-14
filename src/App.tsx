@@ -36,13 +36,13 @@ const Layout: React.FC<LayoutProps> = ({ initialNewsItems }) => {
 };
 
 const App: React.FC<AppProps> = ({ initialData }) => {
-  return (
-    <>
+    return (
+    <div className="page-shell">
       <div className="header-shell">
         <Header />
       </div>
 
-      <div className="container">
+      <div className="container page-content">
         <Routes>
           <Route
             path="/"
@@ -59,7 +59,7 @@ const App: React.FC<AppProps> = ({ initialData }) => {
           <Route path="/shop" element={<Shop />} />
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
 
-        {/* Filtered news routes */}
+          {/* Filtered news routes */}
           {Object.values(HeaderTags).map((tag: string) => (
             <Route
               key={tag}
@@ -75,10 +75,10 @@ const App: React.FC<AppProps> = ({ initialData }) => {
             />
           ))}
         </Routes>
-
-        <Footer />
       </div>
-    </>
+
+      <Footer />
+    </div>
   );
 };
 

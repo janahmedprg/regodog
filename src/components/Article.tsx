@@ -36,6 +36,7 @@ interface ArticleData {
   newsFeedThumbnailPositionY?: number;
   editorStateUrl?: string;
   htmlContentUrl?: string;
+  embeddedImageUrls?: string[];
   content?: string;
   htmlContent?: string;
   likesCount?: number;
@@ -109,6 +110,33 @@ function parseCsvLine(line: string): string[] {
 
   values.push(current);
   return values;
+}
+
+function getStoragePathFromDownloadUrl(downloadUrl: string): string | null {
+  try {
+    const urlObj = new URL(downloadUrl);
+    const pathMatch = urlObj.pathname.match(/\/o\/(.+)$/);
+    if (!pathMatch) {
+      return null;
+    }
+    return decodeURIComponent(pathMatch[1]);
+  } catch {
+    return null;
+  }
+}
+
+async function deleteStorageObject(downloadUrl: string): Promise<void> {
+  const storagePath = getStoragePathFromDownloadUrl(downloadUrl);
+  if (!storagePath) {
+    return;
+  }
+
+  try {
+    const fileRef = ref(storage, storagePath);
+    await deleteObject(fileRef);
+  } catch (error) {
+    console.warn("Error deleting storage object:", error);
+  }
 }
 
 function parseCommentsCsv(csvText: string): CommentEntry[] {
@@ -555,50 +583,25 @@ const Article: React.FC<ArticleProps> = ({ initialArticle }) => {
 
       // Delete thumbnail image if it exists
       if (data?.thumbnailUrl) {
-        try {
-          // Extract path from Firebase Storage download URL
-          const urlObj = new URL(data.thumbnailUrl);
-          const pathMatch = urlObj.pathname.match(/\/o\/(.+)/);
-          if (pathMatch) {
-            const decodedPath = decodeURIComponent(pathMatch[1]);
-            const imgRef = ref(storage, decodedPath);
-            await deleteObject(imgRef);
-          }
-        } catch (err) {
-          console.warn("Error deleting thumbnail image:", err);
-        }
+        await deleteStorageObject(data.thumbnailUrl);
       }
 
       // Delete editor state file if it exists
       if (data?.editorStateUrl) {
-        try {
-          // Extract path from Firebase Storage download URL
-          // URL format: https://firebasestorage.googleapis.com/v0/b/BUCKET/o/PATH%2FTO%2FFILE?alt=media&token=...
-          const urlObj = new URL(data.editorStateUrl);
-          const pathMatch = urlObj.pathname.match(/\/o\/(.+)/);
-          if (pathMatch) {
-            const decodedPath = decodeURIComponent(pathMatch[1]);
-            const editorStateRef = ref(storage, decodedPath);
-            await deleteObject(editorStateRef);
-          }
-        } catch (err) {
-          console.warn("Error deleting editor state file:", err);
-        }
+        await deleteStorageObject(data.editorStateUrl);
       }
 
       // Delete HTML content file if it exists
       if (data?.htmlContentUrl) {
-        try {
-          // Extract path from Firebase Storage download URL
-          const urlObj = new URL(data.htmlContentUrl);
-          const pathMatch = urlObj.pathname.match(/\/o\/(.+)/);
-          if (pathMatch) {
-            const decodedPath = decodeURIComponent(pathMatch[1]);
-            const htmlRef = ref(storage, decodedPath);
-            await deleteObject(htmlRef);
+        await deleteStorageObject(data.htmlContentUrl);
+      }
+
+      // Delete embedded article images referenced from the editor content.
+      if (Array.isArray(data?.embeddedImageUrls)) {
+        for (const imageUrl of data.embeddedImageUrls) {
+          if (typeof imageUrl === "string") {
+            await deleteStorageObject(imageUrl);
           }
-        } catch (err) {
-          console.warn("Error deleting HTML content file:", err);
         }
       }
 

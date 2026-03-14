@@ -17,6 +17,10 @@ import {
 } from 'lexical';
 
 import {parseAllowedFontSize} from './plugins/ToolbarPlugin/fontSize';
+import {
+  DEFAULT_LINE_HEIGHT,
+  parseAllowedLineHeight,
+} from './plugins/ToolbarPlugin/lineHeight';
 import {parseAllowedColor} from './ui/ColorPicker';
 
 function getExtraStyles(element: HTMLElement): string {
@@ -24,10 +28,14 @@ function getExtraStyles(element: HTMLElement): string {
   // sort of styles that would be produced by exportDOM
   let extraStyles = '';
   const fontSize = parseAllowedFontSize(element.style.fontSize);
+  const lineHeight = parseAllowedLineHeight(element.style.lineHeight);
   const backgroundColor = parseAllowedColor(element.style.backgroundColor);
   const color = parseAllowedColor(element.style.color);
   if (fontSize !== '' && fontSize !== '15px') {
     extraStyles += `font-size: ${fontSize};`;
+  }
+  if (lineHeight !== '' && lineHeight !== DEFAULT_LINE_HEIGHT) {
+    extraStyles += `line-height: ${lineHeight};`;
   }
   if (backgroundColor !== '' && backgroundColor !== 'rgb(255, 255, 255)') {
     extraStyles += `background-color: ${backgroundColor};`;

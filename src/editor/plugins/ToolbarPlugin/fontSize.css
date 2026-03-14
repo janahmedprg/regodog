@@ -34,6 +34,30 @@ input[type='number'] {
   -moz-appearance: textfield;
 }
 
+.line-height-input {
+  font-weight: bold;
+  font-size: 14px;
+  color: #777;
+  border-radius: 5px;
+  border-color: grey;
+  height: 15px;
+  padding: 2px 4px;
+  text-align: center;
+  width: 30px;
+  align-self: center;
+}
+
+.line-height-input:disabled {
+  opacity: 0.2;
+  cursor: not-allowed;
+}
+
+input[type='number'].line-height-input::-webkit-outer-spin-button,
+input[type='number'].line-height-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
 .add-icon {
   background-image: url(../../images/icons/add-sign.svg);
   background-repeat: no-repeat;
@@ -44,6 +68,16 @@ input[type='number'] {
   background-image: url(../../images/icons/minus-sign.svg);
   background-repeat: no-repeat;
   background-position: center;
+}
+
+button.line-height-decrement {
+  padding: 0px;
+  margin-right: 3px;
+}
+
+button.line-height-increment {
+  padding: 0px;
+  margin-left: 3px;
 }
 
 button.font-decrement {

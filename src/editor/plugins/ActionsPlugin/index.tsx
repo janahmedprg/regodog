@@ -66,6 +66,9 @@ function SaveArticleForm({
   const [imagePreview, setImagePreview] = useState<string | null>(
     initialThumbnailUrl,
   );
+  const [activeDragTarget, setActiveDragTarget] = useState<
+    "thumbnail" | "newsFeed" | null
+  >(null);
   const [thumbnailPositionX, setThumbnailPositionX] = useState<number>(
     clampPercent(initialThumbnailPositionX),
   );
@@ -80,6 +83,7 @@ function SaveArticleForm({
   );
   const [isDragging, setIsDragging] = useState(false);
   const previewRef = useRef<HTMLDivElement | null>(null);
+  const newsFeedPreviewRef = useRef<HTMLDivElement | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -167,8 +171,13 @@ function SaveArticleForm({
   };
 
   const updatePositionFromPointer = useCallback(
-    (clientX: number, clientY: number) => {
-      const preview = previewRef.current;
+    (
+      clientX: number,
+      clientY: number,
+      preview: HTMLDivElement | null,
+      setX: (value: number) => void,
+      setY: (value: number) => void,
+    ) => {
       if (!preview) {
         return;
       }
@@ -180,22 +189,42 @@ function SaveArticleForm({
       const nextY = clampPercent(
         ((clientY - rect.top) / Math.max(1, rect.height)) * 100,
       );
-      setThumbnailPositionX(nextX);
-      setThumbnailPositionY(nextY);
+      setX(nextX);
+      setY(nextY);
     },
     [],
   );
 
   useEffect(() => {
-    if (!isDragging) {
+    if (!isDragging || !activeDragTarget) {
       return;
     }
 
+    const activePreview =
+      activeDragTarget === "newsFeed"
+        ? newsFeedPreviewRef.current
+        : previewRef.current;
+    const setX =
+      activeDragTarget === "newsFeed"
+        ? setNewsFeedPositionX
+        : setThumbnailPositionX;
+    const setY =
+      activeDragTarget === "newsFeed"
+        ? setNewsFeedPositionY
+        : setThumbnailPositionY;
+
     const handleMove = (event: PointerEvent) => {
-      updatePositionFromPointer(event.clientX, event.clientY);
+      updatePositionFromPointer(
+        event.clientX,
+        event.clientY,
+        activePreview,
+        setX,
+        setY,
+      );
     };
     const stopDrag = () => {
       setIsDragging(false);
+      setActiveDragTarget(null);
     };
 
     window.addEventListener("pointermove", handleMove);
@@ -207,24 +236,55 @@ function SaveArticleForm({
       window.removeEventListener("pointerup", stopDrag);
       window.removeEventListener("pointercancel", stopDrag);
     };
-  }, [isDragging, updatePositionFromPointer]);
+  }, [isDragging, activeDragTarget, updatePositionFromPointer]);
 
   const handlePointerDown = useCallback(
-    (event: React.PointerEvent<HTMLDivElement>) => {
+    (
+      event: React.PointerEvent<HTMLDivElement>,
+      target: "thumbnail" | "newsFeed",
+    ) => {
       if (!imagePreview || isSaving) {
         return;
       }
 
       event.preventDefault();
+      const preview =
+        target === "newsFeed" ? newsFeedPreviewRef.current : previewRef.current;
+      const setX =
+        target === "newsFeed" ? setNewsFeedPositionX : setThumbnailPositionX;
+      const setY =
+        target === "newsFeed" ? setNewsFeedPositionY : setThumbnailPositionY;
+      setActiveDragTarget(target);
       setIsDragging(true);
-      updatePositionFromPointer(event.clientX, event.clientY);
+      updatePositionFromPointer(
+        event.clientX,
+        event.clientY,
+        preview,
+        setX,
+        setY,
+      );
     },
-    [imagePreview, isSaving, updatePositionFromPointer],
+    [
+      imagePreview,
+      isSaving,
+      newsFeedPreviewRef,
+      setActiveDragTarget,
+      setIsDragging,
+      updatePositionFromPointer,
+    ],
   );
 
   return (
-    <div style={{ padding: "20px", minWidth: "400px" }}>
-      <div style={{ marginBottom: "15px" }}>
+    <div
+      className="SaveArticleForm__scrollArea"
+      style={{
+        padding: "20px",
+        maxWidth: "500px",
+        maxHeight: "min(75vh, calc(100vh - 160px))",
+        overflowY: "auto",
+      }}
+    >
+      <div style={{ marginBottom: "15px", width: "90%" }}>
         <label
           htmlFor="article-title"
           style={{ display: "block", marginBottom: "5px" }}
@@ -308,7 +368,7 @@ function SaveArticleForm({
               </div>
               <div
                 ref={previewRef}
-                onPointerDown={handlePointerDown}
+                onPointerDown={(event) => handlePointerDown(event, "thumbnail")}
                 style={{
                   position: "relative",
                   width: "100%",
@@ -332,9 +392,6 @@ function SaveArticleForm({
                   }}
                 />
               </div>
-              <div style={{ marginTop: "8px", fontSize: "12px", color: "#555" }}>
-                Drag inside the preview to move article banner focus.
-              </div>
             </div>
             <div>
               <div
@@ -348,6 +405,8 @@ function SaveArticleForm({
                 News feed preview (16:9)
               </div>
               <div
+                ref={newsFeedPreviewRef}
+                onPointerDown={(event) => handlePointerDown(event, "newsFeed")}
                 style={{
                   position: "relative",
                   width: "100%",
@@ -356,6 +415,7 @@ function SaveArticleForm({
                   overflow: "hidden",
                   border: "1px solid #ddd",
                   background: "#f0f0f0",
+                  cursor: isSaving ? "not-allowed" : "grab",
                 }}
               >
                 <img
@@ -442,9 +502,7 @@ function SaveArticleForm({
                 step={1}
                 value={newsFeedPositionX}
                 onChange={(event) =>
-                  setNewsFeedPositionX(
-                    clampPercent(Number(event.target.value)),
-                  )
+                  setNewsFeedPositionX(clampPercent(Number(event.target.value)))
                 }
                 disabled={isSaving}
               />
@@ -469,9 +527,7 @@ function SaveArticleForm({
                 step={1}
                 value={newsFeedPositionY}
                 onChange={(event) =>
-                  setNewsFeedPositionY(
-                    clampPercent(Number(event.target.value)),
-                  )
+                  setNewsFeedPositionY(clampPercent(Number(event.target.value)))
                 }
                 disabled={isSaving}
               />
