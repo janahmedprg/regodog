@@ -12,6 +12,8 @@ interface ArticleContextValue {
   articleId?: string;
   articleTitle?: string;
   articleTags?: string[];
+  articlePinned?: boolean;
+  articlePinnedOrder?: number;
   articleThumbnailUrl?: string | null;
   articleThumbnailAltText?: string;
   articleThumbnailPositionX?: number;
@@ -28,6 +30,8 @@ export function ArticleContextProvider({
   articleId,
   articleTitle,
   articleTags,
+  articlePinned,
+  articlePinnedOrder,
   articleThumbnailUrl,
   articleThumbnailAltText,
   articleThumbnailPositionX,
@@ -40,6 +44,8 @@ export function ArticleContextProvider({
   articleId?: string;
   articleTitle?: string;
   articleTags?: string[];
+  articlePinned?: boolean;
+  articlePinnedOrder?: number;
   articleThumbnailUrl?: string | null;
   articleThumbnailAltText?: string;
   articleThumbnailPositionX?: number;
@@ -59,6 +65,8 @@ export function ArticleContextProvider({
         articleId,
         articleTitle,
         articleTags,
+        articlePinned,
+        articlePinnedOrder,
         articleThumbnailUrl,
         articleThumbnailAltText,
         articleThumbnailPositionX: resolvedThumbnailPositionX,

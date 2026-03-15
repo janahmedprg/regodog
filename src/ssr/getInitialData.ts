@@ -31,6 +31,8 @@ type RawNewsRecord = {
   newsFeedThumbnailPositionY?: number;
   tags?: string[];
   editorStateUrl?: string;
+  pinned?: boolean;
+  pinnedOrder?: number;
 };
 
 function extractTextFromHtml(html: string): string {
@@ -206,6 +208,8 @@ function toRawNewsRecord(document: FirestoreDocument): RawNewsRecord {
       | undefined) || undefined;
   const editorStateUrl =
     (firestoreValueToJs(fields.editorStateUrl) as string | undefined) || undefined;
+  const pinned = firestoreValueToJs(fields.pinned);
+  const pinnedOrder = firestoreValueToJs(fields.pinnedOrder);
 
   const tagsRaw = firestoreValueToJs(fields.tags);
   const tags = Array.isArray(tagsRaw)
@@ -227,6 +231,11 @@ function toRawNewsRecord(document: FirestoreDocument): RawNewsRecord {
     newsFeedThumbnailPositionY,
     tags,
     editorStateUrl,
+    pinnedOrder:
+      typeof pinnedOrder === "number" && Number.isFinite(pinnedOrder)
+        ? pinnedOrder
+        : undefined,
+    pinned: typeof pinned === "boolean" ? pinned : false,
   };
 }
 
@@ -330,6 +339,8 @@ async function fetchArticleById(id: string): Promise<SSRArticle | undefined> {
     id: sourceArticle.id,
     title: sourceArticle.title,
     tags: sourceArticle.tags || [],
+    pinned: sourceArticle.pinned || false,
+    pinnedOrder: sourceArticle.pinnedOrder,
     thumbnailUrl: sourceArticle.thumbnailUrl,
     thumbnailAltText: sourceArticle.thumbnailAltText,
     thumbnailPositionX: sourceArticle.thumbnailPositionX,

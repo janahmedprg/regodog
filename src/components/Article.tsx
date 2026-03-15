@@ -1,5 +1,5 @@
-import React, {Suspense, useEffect, useState} from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import React, { Suspense, useEffect, useState } from "react";
+import { Link, useParams, useNavigate } from "react-router-dom";
 import {
   db,
   doc,
@@ -29,6 +29,8 @@ interface ArticleData {
   id?: string;
   title: string;
   tags?: string[];
+  pinned?: boolean;
+  pinnedOrder?: number;
   thumbnailUrl?: string;
   thumbnailAltText?: string;
   thumbnailPositionX?: number;
@@ -58,7 +60,9 @@ interface CommentEntry {
 
 const COMMENTS_CSV_HEADER = "createdAt,displayName,comment,isAnonymous,userId";
 
-function getFullNameFromUserInfo(data: Record<string, unknown> | undefined): string {
+function getFullNameFromUserInfo(
+  data: Record<string, unknown> | undefined,
+): string {
   if (!data) {
     return "";
   }
@@ -181,7 +185,7 @@ function buildCommentsCsv(comments: CommentEntry[]): string {
       escapeCsvValue(entry.comment),
       escapeCsvValue(String(entry.isAnonymous)),
       escapeCsvValue(entry.userId),
-    ].join(",")
+    ].join(","),
   );
 
   return [COMMENTS_CSV_HEADER, ...rows].join("\n");
@@ -198,7 +202,7 @@ const Article: React.FC<ArticleProps> = ({ initialArticle }) => {
       : "";
 
   const [article, setArticle] = useState<ArticleData | null>(
-    isSeededArticle ? initialArticle || null : null
+    isSeededArticle ? initialArticle || null : null,
   );
   const [loading, setLoading] = useState<boolean>(!isSeededArticle);
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
@@ -206,35 +210,36 @@ const Article: React.FC<ArticleProps> = ({ initialArticle }) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
 
   const [editedTitle, setEditedTitle] = useState<string>(
-    isSeededArticle ? initialArticle?.title || "" : ""
+    isSeededArticle ? initialArticle?.title || "" : "",
   );
   const [selectedTags, setSelectedTags] = useState<string[]>(
-    isSeededArticle ? initialArticle?.tags || [] : []
+    isSeededArticle ? initialArticle?.tags || [] : [],
   );
   const [imagePreview, setImagePreview] = useState<string | null>(
-    isSeededArticle ? initialArticle?.thumbnailUrl || null : null
+    isSeededArticle ? initialArticle?.thumbnailUrl || null : null,
   );
 
   // NEW: fetched HTML content
   const [htmlContent, setHtmlContent] = useState<string>(
-    isSeededArticle ? initialArticle?.htmlContent || seededHtmlFromDom : ""
+    isSeededArticle ? initialArticle?.htmlContent || seededHtmlFromDom : "",
   );
 
   // NEW: fetched editorState JSON
   const [fetchedEditorState, setFetchedEditorState] = useState<string | null>(
-    null
+    null,
   );
   const [likesCount, setLikesCount] = useState<number>(
-    isSeededArticle ? initialArticle?.likesCount || 0 : 0
+    isSeededArticle ? initialArticle?.likesCount || 0 : 0,
   );
   const [hasLiked, setHasLiked] = useState<boolean>(false);
   const [isLikeUpdating, setIsLikeUpdating] = useState<boolean>(false);
   const [comments, setComments] = useState<CommentEntry[]>([]);
   const [commentText, setCommentText] = useState<string>("");
   const [isAnonymousComment, setIsAnonymousComment] = useState<boolean>(false);
-  const [isCommentSubmitting, setIsCommentSubmitting] = useState<boolean>(false);
+  const [isCommentSubmitting, setIsCommentSubmitting] =
+    useState<boolean>(false);
   const [editingCommentIndex, setEditingCommentIndex] = useState<number | null>(
-    null
+    null,
   );
   const [editingCommentText, setEditingCommentText] = useState<string>("");
   const [isCommentEditing, setIsCommentEditing] = useState<boolean>(false);
@@ -340,7 +345,9 @@ const Article: React.FC<ArticleProps> = ({ initialArticle }) => {
         const nextLikesCount =
           typeof data.likesCount === "number" ? data.likesCount : 0;
         const likedBy = Array.isArray(data.likedBy)
-          ? data.likedBy.filter((entry): entry is string => typeof entry === "string")
+          ? data.likedBy.filter(
+              (entry): entry is string => typeof entry === "string",
+            )
           : [];
 
         if (
@@ -355,7 +362,7 @@ const Article: React.FC<ArticleProps> = ({ initialArticle }) => {
 
         setLikesCount(nextLikesCount);
         setHasLiked(
-          currentUser?.uid ? likedBy.includes(currentUser.uid) : false
+          currentUser?.uid ? likedBy.includes(currentUser.uid) : false,
         );
       } catch (error) {
         console.error("Error fetching article engagement:", error);
@@ -412,7 +419,9 @@ const Article: React.FC<ArticleProps> = ({ initialArticle }) => {
 
         const data = snapshot.data() as ArticleData;
         const likedBy = Array.isArray(data.likedBy)
-          ? data.likedBy.filter((entry): entry is string => typeof entry === "string")
+          ? data.likedBy.filter(
+              (entry): entry is string => typeof entry === "string",
+            )
           : [];
         const currentLikesCount =
           typeof data.likesCount === "number" ? data.likesCount : 0;
@@ -440,7 +449,9 @@ const Article: React.FC<ArticleProps> = ({ initialArticle }) => {
     }
   };
 
-  const handleSubmitComment = async (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmitComment = async (
+    event: React.FormEvent<HTMLFormElement>,
+  ) => {
     event.preventDefault();
     if (!id) return;
     if (!currentUser) {
@@ -543,7 +554,9 @@ const Article: React.FC<ArticleProps> = ({ initialArticle }) => {
     setIsCommentEditing(true);
     try {
       const updatedComments = comments.map((entry, index) =>
-        index === originalIndex ? { ...entry, comment: normalizedComment } : entry
+        index === originalIndex
+          ? { ...entry, comment: normalizedComment }
+          : entry,
       );
 
       const csvData = buildCommentsCsv(updatedComments);
@@ -637,7 +650,9 @@ const Article: React.FC<ArticleProps> = ({ initialArticle }) => {
       {isEditing ? (
         <div className="edit-mode">
           {isBrowser && (
-            <Suspense fallback={<div className="loading">Loading editor...</div>}>
+            <Suspense
+              fallback={<div className="loading">Loading editor...</div>}
+            >
               <EditorApp
                 initialEditorState={
                   fetchedEditorState || article.editorStateUrl || ""
@@ -645,6 +660,8 @@ const Article: React.FC<ArticleProps> = ({ initialArticle }) => {
                 articleId={id}
                 articleTitle={editedTitle}
                 articleTags={selectedTags}
+                articlePinned={article.pinned}
+                articlePinnedOrder={article.pinnedOrder}
                 articleThumbnailUrl={imagePreview || article.thumbnailUrl}
                 articleThumbnailAltText={article.thumbnailAltText}
                 articleThumbnailPositionX={article.thumbnailPositionX}
@@ -682,9 +699,13 @@ const Article: React.FC<ArticleProps> = ({ initialArticle }) => {
 
           <div className="article-tags">
             {article.tags?.map((tag) => (
-              <span key={tag} className="tag">
-                {tag}
-              </span>
+              <Link
+                key={tag}
+                to={`/${encodeURIComponent(tag)}`}
+                className="tag"
+              >
+                {tag.replaceAll("_", " ")}
+              </Link>
             ))}
           </div>
 
@@ -704,22 +725,27 @@ const Article: React.FC<ArticleProps> = ({ initialArticle }) => {
                 className={`article-like-button ${hasLiked ? "article-like-button-active" : ""}`}
                 onClick={handleLikeClick}
                 disabled={isLikeUpdating}
-                aria-label={hasLiked ? "Unlike this article" : "Like this article"}
+                aria-label={
+                  hasLiked ? "Unlike this article" : "Like this article"
+                }
               >
                 <span className="article-like-icon" aria-hidden="true">
                   {hasLiked ? <FaHeart /> : <FaRegHeart />}
                 </span>
-                <span className="article-like-text">{hasLiked ? "Liked" : "Like"}</span>
+                <span className="article-like-text">
+                  {hasLiked ? "Liked" : "Like"}
+                </span>
                 <span className="article-like-count">{likesCount}</span>
               </button>
               {!currentUser && (
-                <p className="article-auth-hint">
-                  Sign in to like.
-                </p>
+                <p className="article-auth-hint">Sign in to like.</p>
               )}
             </div>
 
-            <form className="article-comment-form" onSubmit={handleSubmitComment}>
+            <form
+              className="article-comment-form"
+              onSubmit={handleSubmitComment}
+            >
               <label htmlFor="article-comment-input">Leave a comment</label>
               <textarea
                 id="article-comment-input"
@@ -732,7 +758,9 @@ const Article: React.FC<ArticleProps> = ({ initialArticle }) => {
                 <input
                   type="checkbox"
                   checked={isAnonymousComment}
-                  onChange={(event) => setIsAnonymousComment(event.target.checked)}
+                  onChange={(event) =>
+                    setIsAnonymousComment(event.target.checked)
+                  }
                 />
                 Post anonymously
               </label>
@@ -745,9 +773,7 @@ const Article: React.FC<ArticleProps> = ({ initialArticle }) => {
                   {isCommentSubmitting ? "Posting..." : "Post comment"}
                 </button>
                 {!currentUser && (
-                  <p className="article-auth-hint">
-                    Sign in to comment.
-                  </p>
+                  <p className="article-auth-hint">Sign in to comment.</p>
                 )}
               </div>
             </form>

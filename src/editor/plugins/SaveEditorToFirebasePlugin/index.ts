@@ -223,6 +223,8 @@ export interface SaveEditorToFirebaseOptions {
   newsFeedThumbnailPositionX?: number;
   newsFeedThumbnailPositionY?: number;
   existingThumbnailUrl?: string | null; // Existing thumbnail URL to preserve if no new image is uploaded
+  pinned?: boolean;
+  pinnedOrder?: number;
   articleId?: string; // If provided, will update existing article instead of creating new one
   onSuccess?: (articleId: string) => void;
   onError?: (error: Error) => void;
@@ -242,6 +244,8 @@ export async function saveEditorToFirebase(
     newsFeedThumbnailPositionX,
     newsFeedThumbnailPositionY,
     existingThumbnailUrl,
+    pinned = false,
+    pinnedOrder = 0,
     articleId,
     onSuccess,
     onError,
@@ -416,6 +420,8 @@ export async function saveEditorToFirebase(
       newsFeedThumbnailPositionX?: number;
       newsFeedThumbnailPositionY?: number;
       thumbnailUrl?: string | null;
+      pinned: boolean;
+      pinnedOrder?: number;
       lastUpdated: Date;
       author?: string;
       createdAt?: Date;
@@ -425,6 +431,11 @@ export async function saveEditorToFirebase(
       htmlContentUrl,
       tags,
       embeddedImageUrls: currentEmbeddedImageUrls,
+      pinned,
+      pinnedOrder: Number.isFinite(pinnedOrder)
+        ? Math.max(0, Math.floor(pinnedOrder))
+        : 0,
+      pinnedOrder,
       lastUpdated: new Date(),
       author: auth.currentUser?.uid || "anonymous",
     };

@@ -317,7 +317,7 @@ const Auth: React.FC<AuthProps> = ({ initialView = "signin" }) => {
               <button
                 type="button"
                 role="tab"
-                className={`auth-mode-button ${authMode === "signin" ? "auth-mode-button-active" : ""}`}
+                className={`auth-mode-tab ${authMode === "signin" ? "auth-mode-tab--active" : ""}`}
                 onClick={() => switchAuthView("signin")}
                 aria-selected={authMode === "signin"}
               >
@@ -326,7 +326,7 @@ const Auth: React.FC<AuthProps> = ({ initialView = "signin" }) => {
               <button
                 type="button"
                 role="tab"
-                className={`auth-mode-button ${authMode === "signup" ? "auth-mode-button-active" : ""}`}
+                className={`auth-mode-tab ${authMode === "signup" ? "auth-mode-tab--active" : ""}`}
                 onClick={() => switchAuthView("signup")}
                 aria-selected={authMode === "signup"}
               >

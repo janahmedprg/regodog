@@ -5,7 +5,7 @@ import { onAuthStateChanged, User } from "firebase/auth";
 import NewsItem, { NewsItemProps } from "./NewsItem.js";
 import "../styles/styles.css";
 import "../styles/tags.css";
-import { useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 
 const NEWS_ITEMS_PER_PAGE = 9;
 
@@ -149,6 +149,8 @@ interface NewsFeedProps {
 interface NewsItemData extends Omit<NewsItemProps, "link"> {
   id: string;
   lastUpdated?: unknown;
+  pinned?: boolean;
+  pinnedOrder?: number;
 }
 
 const EditorApp = React.lazy(() => import("../editor/App.js"));
@@ -165,8 +167,15 @@ const NewsFeed: React.FC<NewsFeedProps> = ({ tag, initialNewsItems }) => {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const pinnedStripRef = React.useRef<HTMLDivElement | null>(null);
+  const [canScrollPinnedLeft, setCanScrollPinnedLeft] =
+    useState<boolean>(false);
+  const [canScrollPinnedRight, setCanScrollPinnedRight] =
+    useState<boolean>(false);
 
   const currentPage = parsePageFromSearchParams(searchParams);
+  const isHome = !tag;
+  const shouldPaginate = Boolean(tag);
 
   // Fetch news items
   useEffect(() => {
@@ -215,15 +224,75 @@ const NewsFeed: React.FC<NewsFeedProps> = ({ tag, initialNewsItems }) => {
     });
   }, [newsItems]);
 
-  const totalPages = Math.max(1, Math.ceil(sortedItems.length / NEWS_ITEMS_PER_PAGE));
-  const safeCurrentPage = Math.min(currentPage, totalPages);
+  const pinnedItems = React.useMemo(
+    () =>
+      sortedItems
+        .filter((item) => item.pinned)
+        .sort((a, b) => {
+          const aOrder =
+            typeof a.pinnedOrder === "number"
+              ? a.pinnedOrder
+              : Number.MAX_SAFE_INTEGER;
+          const bOrder =
+            typeof b.pinnedOrder === "number"
+              ? b.pinnedOrder
+              : Number.MAX_SAFE_INTEGER;
+          if (aOrder !== bOrder) {
+            return aOrder - bOrder;
+          }
+
+          const aTime = toEpochMillis(a.createdAt);
+          const bTime = toEpochMillis(b.createdAt);
+          return bTime - aTime;
+        }),
+    [sortedItems],
+  );
+
+  const totalPages = shouldPaginate
+    ? Math.max(1, Math.ceil(sortedItems.length / NEWS_ITEMS_PER_PAGE))
+    : 1;
+  const safeCurrentPage = shouldPaginate
+    ? Math.min(currentPage, totalPages)
+    : 1;
   const startIndex = (safeCurrentPage - 1) * NEWS_ITEMS_PER_PAGE;
-  const paginatedItems = sortedItems.slice(
-    startIndex,
-    startIndex + NEWS_ITEMS_PER_PAGE,
+  const paginatedItems = shouldPaginate
+    ? sortedItems.slice(startIndex, startIndex + NEWS_ITEMS_PER_PAGE)
+    : [];
+
+  const updatePinnedScrollState = React.useCallback(() => {
+    const strip = pinnedStripRef.current;
+    if (!strip) {
+      setCanScrollPinnedLeft(false);
+      setCanScrollPinnedRight(false);
+      return;
+    }
+
+    const maxScrollLeft = Math.max(0, strip.scrollWidth - strip.clientWidth);
+    setCanScrollPinnedLeft(strip.scrollLeft > 2);
+    setCanScrollPinnedRight(strip.scrollLeft < maxScrollLeft - 2);
+  }, []);
+
+  const scrollPinnedStrip = React.useCallback(
+    (direction: "left" | "right") => {
+      const strip = pinnedStripRef.current;
+      if (!strip) {
+        return;
+      }
+      const step = Math.max(300, Math.floor(strip.clientWidth * 0.85));
+      strip.scrollBy({
+        left: direction === "left" ? -step : step,
+        behavior: "smooth",
+      });
+      window.setTimeout(updatePinnedScrollState, 180);
+    },
+    [updatePinnedScrollState],
   );
 
   const pageNumbers = React.useMemo(() => {
+    if (!shouldPaginate) {
+      return [];
+    }
+
     if (totalPages <= 5) {
       return Array.from({ length: totalPages }, (_, index) => index + 1);
     }
@@ -255,6 +324,26 @@ const NewsFeed: React.FC<NewsFeedProps> = ({ tag, initialNewsItems }) => {
     pages.push(totalPages);
     return pages;
   }, [safeCurrentPage, totalPages]);
+
+  useEffect(() => {
+    const strip = pinnedStripRef.current;
+    if (!strip) {
+      return;
+    }
+
+    const onScroll = () => {
+      updatePinnedScrollState();
+    };
+
+    strip.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    onScroll();
+
+    return () => {
+      strip.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+    };
+  }, [pinnedItems.length, updatePinnedScrollState]);
 
   // Check if the user is an admin
   useEffect(() => {
@@ -289,7 +378,7 @@ const NewsFeed: React.FC<NewsFeedProps> = ({ tag, initialNewsItems }) => {
   return (
     <div className="news-feed">
       <h2 className="news-header">
-        {tag ? tag.toUpperCase().replace(/_/g, " ") : "FEATURED"}
+        {tag ? tag.toUpperCase().replace(/_/g, " ") : "WELCOME TO RegoDog"}
       </h2>
 
       {isAdmin && (
@@ -324,80 +413,194 @@ const NewsFeed: React.FC<NewsFeedProps> = ({ tag, initialNewsItems }) => {
         </div>
       )}
 
-      <div className="news-items">
-        {paginatedItems.map((item) => (
-          <NewsItem
-            key={item.id}
-            title={item.title}
-            content={item.content}
-            htmlContentUrl={item.htmlContentUrl}
-            previewText={item.previewText}
-            link={item.id}
-            createdAt={item.createdAt}
-            thumbnailUrl={item.thumbnailUrl}
-            thumbnailAltText={item.thumbnailAltText}
-            newsFeedThumbnailPositionX={item.newsFeedThumbnailPositionX ?? item.thumbnailPositionX}
-            newsFeedThumbnailPositionY={item.newsFeedThumbnailPositionY ?? item.thumbnailPositionY}
-            thumbnailPositionX={item.thumbnailPositionX}
-            thumbnailPositionY={item.thumbnailPositionY}
-          />
-        ))}
-      </div>
-      {totalPages > 1 && (
-        <div className="news-pagination">
-          <button
-            type="button"
-            className="news-page-button news-page-arrow"
-            onClick={() => {
-              const nextPage = Math.max(1, safeCurrentPage - 1);
-              setSearchParams({ page: String(nextPage) });
-            }}
-            disabled={safeCurrentPage <= 1}
-            aria-label="Previous page"
-          >
-            Previous
-          </button>
-
-          <div className="news-page-numbers">
-            {pageNumbers.map((page, index) => {
-              if (page === "...") {
-                return (
-                  <span key={`ellipsis-${index}`} className="news-page-ellipsis">
-                    …
-                  </span>
-                );
-              }
-
-              return (
-                <button
-                  type="button"
-                  key={page}
-                  className={`news-page-number ${
-                    page === safeCurrentPage ? "news-page-number--active" : ""
-                  }`}
-                  onClick={() => setSearchParams({ page: String(page) })}
-                  disabled={page === safeCurrentPage}
-                  aria-current={page === safeCurrentPage ? "page" : undefined}
-                >
-                  {page}
-                </button>
-              );
-            })}
+      {!isHome && (
+        <>
+          <div className="news-items">
+            {paginatedItems.map((item) => (
+              <NewsItem
+                key={item.id}
+                title={item.title}
+                content={item.content}
+                htmlContentUrl={item.htmlContentUrl}
+                previewText={item.previewText}
+                link={item.id}
+                createdAt={item.createdAt}
+                thumbnailUrl={item.thumbnailUrl}
+                thumbnailAltText={item.thumbnailAltText}
+                newsFeedThumbnailPositionX={
+                  item.newsFeedThumbnailPositionX ?? item.thumbnailPositionX
+                }
+                newsFeedThumbnailPositionY={
+                  item.newsFeedThumbnailPositionY ?? item.thumbnailPositionY
+                }
+                thumbnailPositionX={item.thumbnailPositionX}
+                thumbnailPositionY={item.thumbnailPositionY}
+              />
+            ))}
           </div>
+          {totalPages > 1 && (
+            <div className="news-pagination">
+              <button
+                type="button"
+                className="news-page-button news-page-arrow"
+                onClick={() => {
+                  const nextPage = Math.max(1, safeCurrentPage - 1);
+                  setSearchParams({ page: String(nextPage) });
+                }}
+                disabled={safeCurrentPage <= 1}
+                aria-label="Previous page"
+              >
+                Previous
+              </button>
 
-          <button
-            type="button"
-            className="news-page-button news-page-arrow"
-            onClick={() => {
-              const nextPage = Math.min(totalPages, safeCurrentPage + 1);
-              setSearchParams({ page: String(nextPage) });
-            }}
-            disabled={safeCurrentPage >= totalPages}
-            aria-label="Next page"
-          >
-            Next
-          </button>
-        </div>
+              <div className="news-page-numbers">
+                {pageNumbers.map((page, index) => {
+                  if (page === "...") {
+                    return (
+                      <span
+                        key={`ellipsis-${index}`}
+                        className="news-page-ellipsis"
+                      >
+                        …
+                      </span>
+                    );
+                  }
+
+                  return (
+                    <button
+                      type="button"
+                      key={page}
+                      className={`news-page-number ${
+                        page === safeCurrentPage
+                          ? "news-page-number--active"
+                          : ""
+                      }`}
+                      onClick={() => setSearchParams({ page: String(page) })}
+                      disabled={page === safeCurrentPage}
+                      aria-current={
+                        page === safeCurrentPage ? "page" : undefined
+                      }
+                    >
+                      {page}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <button
+                type="button"
+                className="news-page-button news-page-arrow"
+                onClick={() => {
+                  const nextPage = Math.min(totalPages, safeCurrentPage + 1);
+                  setSearchParams({ page: String(nextPage) });
+                }}
+                disabled={safeCurrentPage >= totalPages}
+                aria-label="Next page"
+              >
+                Next
+              </button>
+            </div>
+          )}
+        </>
+      )}
+
+      {isHome && (
+        <section className="home-intro">
+          <div className="home-intro-layout">
+            <div className="home-intro-copy">
+              <p className="home-kicker">A modern blog + newsletter corner</p>
+              <h2 className="home-title">
+                Welcome to Rego Dog — where stories, fresh-baked ideas, and
+                neighborhood energy meet.
+              </h2>
+              <p className="home-description">
+                We&apos;re building this place one post at a time: practical
+                how-tos from the bakery, cozy farmhouse moments, and updates
+                from the rego project as it happens. Think of it as your morning
+                coffee scroll.
+              </p>
+              <p className="home-description">
+                New entries are curated every week, with pinned picks right here
+                so you can jump straight into the favorites without hunting.
+              </p>
+            </div>
+            <aside className="home-intro-side">
+              <h3 className="home-side-title">Explore Topics</h3>
+              <div className="home-action-row home-side-actions">
+                <Link to="/bakery" className="home-link">
+                  Bakery
+                </Link>
+                <Link to="/standard_schnauzer" className="home-link">
+                  Standard Schnauzer
+                </Link>
+                <Link to="/farmhouse" className="home-link">
+                  Farmhouse
+                </Link>
+                <Link to="/rego_project" className="home-link">
+                  Rego Project
+                </Link>
+              </div>
+            </aside>
+          </div>
+        </section>
+      )}
+
+      {isHome && (
+        <section className="home-pinned-section">
+          <div className="home-section-title">
+            <h3>Pinned posts</h3>
+          </div>
+          <div className="home-pinned-strip-shell">
+            <button
+              type="button"
+              className="home-pinned-arrow home-pinned-arrow--left"
+              aria-label="Scroll pinned posts left"
+              onClick={() => scrollPinnedStrip("left")}
+              disabled={!canScrollPinnedLeft}
+            >
+              ‹
+            </button>
+            <div className="home-pinned-strip" ref={pinnedStripRef}>
+              {pinnedItems.length === 0 && (
+                <p className="home-pinned-empty">
+                  No pinned posts yet. Pin your favorites from the editor when
+                  you publish them.
+                </p>
+              )}
+              {pinnedItems.map((item) => (
+                <article key={item.id} className="home-pinned-card">
+                  <NewsItem
+                    title={item.title}
+                    content={item.content}
+                    htmlContentUrl={item.htmlContentUrl}
+                    previewText={item.previewText}
+                    link={item.id}
+                    createdAt={item.createdAt}
+                    thumbnailUrl={item.thumbnailUrl}
+                    thumbnailAltText={item.thumbnailAltText}
+                    newsFeedThumbnailPositionX={
+                      item.newsFeedThumbnailPositionX ?? item.thumbnailPositionX
+                    }
+                    newsFeedThumbnailPositionY={
+                      item.newsFeedThumbnailPositionY ?? item.thumbnailPositionY
+                    }
+                    thumbnailPositionX={item.thumbnailPositionX}
+                    thumbnailPositionY={item.thumbnailPositionY}
+                  />
+                </article>
+              ))}
+            </div>
+            <button
+              type="button"
+              className="home-pinned-arrow home-pinned-arrow--right"
+              aria-label="Scroll pinned posts right"
+              onClick={() => scrollPinnedStrip("right")}
+              disabled={!canScrollPinnedRight}
+            >
+              ›
+            </button>
+          </div>
+        </section>
       )}
     </div>
   );

@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
-import { Link } from "react-router-dom";
+import { Link, NavLink, useLocation } from "react-router-dom";
 import { auth } from "../config/firebase";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { FaRegUser } from "react-icons/fa";
@@ -12,6 +12,9 @@ const Header: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const headerRef = useRef<HTMLElement>(null);
+  const location = useLocation();
+  const isAuthPage = location.pathname === "/auth" || location.pathname.startsWith("/auth/");
+  const isAccountPage = location.pathname === "/account" || location.pathname.startsWith("/account/");
 
   useEffect(() => {
     if (!auth) {
@@ -86,13 +89,24 @@ const Header: React.FC = () => {
       </Link>
       <nav className={`nav ${isMobile ? "nav-mobile-hidden" : ""}`}>
         {Object.values(HeaderTags).map((tag: string) => (
-          <Link key={tag} to={`/${tag}`} className="nav-link">
+          <NavLink
+            key={tag}
+            to={`/${tag}`}
+            className={({ isActive }) =>
+              `nav-link ${isActive ? "nav-link--active" : ""}`.trim()
+            }
+          >
             {tag.replace("_", " ").toUpperCase()}
-          </Link>
+          </NavLink>
         ))}
-        <Link to="/shop" className="nav-link">
+        <NavLink
+          to="/shop"
+          className={({ isActive }) =>
+            `nav-link ${isActive ? "nav-link--active" : ""}`.trim()
+          }
+        >
           SHOP
-        </Link>
+        </NavLink>
       </nav>
       <div
         className={`auth-container-desktop ${isMobile ? "auth-container-desktop-hidden" : ""}`}
@@ -101,7 +115,9 @@ const Header: React.FC = () => {
         {user ? (
           <Link
             to="/account"
-            className="auth-button header-auth-button header-account-button"
+            className={`auth-button header-auth-button header-account-button ${
+              isAccountPage ? "header-account-button--active" : ""
+            }`.trim()}
             aria-label="Open account page"
           >
             <FaRegUser aria-hidden="true" />
@@ -110,7 +126,9 @@ const Header: React.FC = () => {
         ) : (
           <Link
             to="/auth"
-            className="auth-button header-auth-button header-auth-icon-button"
+            className={`auth-button header-auth-button header-auth-icon-button ${
+              isAuthPage ? "header-auth-icon-button--active" : ""
+            }`.trim()}
             aria-label="Sign in or sign up"
           >
             <FaRegUser aria-hidden="true" />
@@ -142,23 +160,33 @@ const Header: React.FC = () => {
           >
             <nav className="mobile-nav">
               {Object.values(HeaderTags).map((tag: string) => (
-                <Link
+                <NavLink
                   key={tag}
                   to={`/${tag}`}
-                  className="mobile-nav-link"
+                  className={({ isActive }) =>
+                    `mobile-nav-link ${isActive ? "mobile-nav-link--active" : ""}`.trim()
+                  }
                   onClick={closeMenu}
                 >
                   {tag.replace("_", " ").toUpperCase()}
-                </Link>
+                </NavLink>
               ))}
-              <Link to="/shop" className="mobile-nav-link" onClick={closeMenu}>
+              <NavLink
+                to="/shop"
+                className={({ isActive }) =>
+                  `mobile-nav-link ${isActive ? "mobile-nav-link--active" : ""}`.trim()
+                }
+                onClick={closeMenu}
+              >
                 SHOP
-              </Link>
+              </NavLink>
               <div className="mobile-auth-container">
                 {user ? (
                   <Link
                     to="/account"
-                    className="auth-button header-auth-button mobile-auth-button header-account-button"
+                    className={`auth-button header-auth-button mobile-auth-button header-account-button ${
+                      isAccountPage ? "header-account-button--active" : ""
+                    }`.trim()}
                     onClick={closeMenu}
                     aria-label="Open account page"
                   >
@@ -168,7 +196,9 @@ const Header: React.FC = () => {
                 ) : (
                   <Link
                     to="/auth"
-                    className="auth-button header-auth-button mobile-auth-button header-auth-icon-button"
+                    className={`auth-button header-auth-button mobile-auth-button header-auth-icon-button ${
+                      isAuthPage ? "header-auth-icon-button--active" : ""
+                    }`.trim()}
                     onClick={closeMenu}
                     aria-label="Sign in or sign up"
                   >

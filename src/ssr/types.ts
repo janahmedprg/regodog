@@ -4,6 +4,8 @@ export interface SSRNewsItem {
   content?: string;
   htmlContentUrl?: string;
   previewText?: string;
+  pinned?: boolean;
+  pinnedOrder?: number;
   createdAt?: number | null;
   lastUpdated?: number | null;
   thumbnailUrl?: string;
@@ -18,6 +20,8 @@ export interface SSRArticle {
   id: string;
   title: string;
   tags?: string[];
+  pinned?: boolean;
+  pinnedOrder?: number;
   thumbnailUrl?: string;
   thumbnailAltText?: string;
   thumbnailPositionX?: number;

@@ -33,6 +33,8 @@ interface SaveArticleFormProps {
   articleId?: string;
   initialTitle?: string;
   initialTags?: string[];
+  initialPinned?: boolean;
+  initialPinnedOrder?: number;
   initialThumbnailUrl?: string | null;
   initialThumbnailAltText?: string;
   initialThumbnailPositionX?: number;
@@ -54,6 +56,8 @@ function SaveArticleForm({
   articleId,
   initialTitle = "",
   initialTags = [],
+  initialPinned = false,
+  initialPinnedOrder,
   initialThumbnailUrl = null,
   initialThumbnailAltText = "",
   initialThumbnailPositionX = 50,
@@ -64,6 +68,12 @@ function SaveArticleForm({
 }: SaveArticleFormProps): JSX.Element {
   const [title, setTitle] = useState(initialTitle);
   const [selectedTags, setSelectedTags] = useState<string[]>(initialTags);
+  const [isPinned, setIsPinned] = useState<boolean>(initialPinned);
+  const [pinnedOrderInput, setPinnedOrderInput] = useState<string>(() =>
+    initialPinned && typeof initialPinnedOrder === "number" && Number.isFinite(initialPinnedOrder)
+      ? String(Math.max(0, Math.floor(initialPinnedOrder)))
+      : "",
+  );
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(
     initialThumbnailUrl,
@@ -91,6 +101,13 @@ function SaveArticleForm({
   const newsFeedPreviewRef = useRef<HTMLDivElement | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    if (!isPinned) {
+      setPinnedOrderInput("");
+      return;
+    }
+  }, [isPinned]);
 
   const availableTags = Object.values(HeaderTags).map((tag: string) => tag);
 
@@ -127,9 +144,19 @@ function SaveArticleForm({
     onSavingChange(true);
 
     try {
+      const nextPinnedOrderValue =
+        pinnedOrderInput.trim() === ""
+          ? 0
+          : Math.max(
+              0,
+              Math.floor(Number.parseInt(pinnedOrderInput, 10) || 0),
+            );
+
       const options: SaveEditorToFirebaseOptions = {
         title: title.trim(),
         tags: selectedTags,
+        pinned: isPinned,
+        pinnedOrder: nextPinnedOrderValue,
         thumbnailImage: selectedImage,
         thumbnailAltText: thumbnailAltText.trim(),
         thumbnailPositionX,
@@ -337,6 +364,48 @@ function SaveArticleForm({
             </label>
           ))}
         </div>
+      </div>
+      <div style={{ marginBottom: "15px" }}>
+        <label
+          htmlFor="article-pinned"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+            cursor: isSaving ? "not-allowed" : "pointer",
+          }}
+        >
+          <input
+            id="article-pinned"
+            type="checkbox"
+            checked={isPinned}
+            onChange={(event) => setIsPinned(event.target.checked)}
+            disabled={isSaving}
+          />
+          Pin this article to homepage
+        </label>
+      </div>
+      <div style={{ marginBottom: "15px" }}>
+        <label
+          htmlFor="article-pinned-order"
+          style={{ display: "block", marginBottom: "5px" }}
+        >
+          Pinned order (lower number appears first)
+        </label>
+        <input
+          id="article-pinned-order"
+          type="text"
+          inputMode="numeric"
+          value={pinnedOrderInput}
+          onChange={(event) => {
+            const nextValue = event.target.value
+              .replace(/[^0-9]/g, "")
+              .replace(/^0+(?=\d)/, "");
+            setPinnedOrderInput(nextValue);
+          }}
+          disabled={isSaving}
+          style={{ width: "120px", padding: "8px", fontSize: "14px", border: "1px solid #ccc", borderRadius: "4px" }}
+        />
       </div>
 
         <div style={{ marginBottom: "15px" }}>
@@ -645,6 +714,8 @@ export default function ActionsPlugin(): JSX.Element {
     articleId,
     articleTitle,
     articleTags,
+    articlePinned,
+    articlePinnedOrder,
     articleThumbnailUrl,
     articleThumbnailAltText,
     articleThumbnailPositionX,
@@ -668,6 +739,8 @@ export default function ActionsPlugin(): JSX.Element {
           articleId={articleId}
           initialTitle={articleTitle}
           initialTags={articleTags}
+          initialPinned={articlePinned}
+          initialPinnedOrder={articlePinnedOrder}
           initialThumbnailUrl={articleThumbnailUrl}
           initialThumbnailAltText={articleThumbnailAltText}
           initialThumbnailPositionX={articleThumbnailPositionX}
@@ -685,6 +758,8 @@ export default function ActionsPlugin(): JSX.Element {
     articleId,
     articleTitle,
     articleTags,
+    articlePinned,
+    articlePinnedOrder,
     articleThumbnailUrl,
     articleThumbnailAltText,
     articleThumbnailPositionX,

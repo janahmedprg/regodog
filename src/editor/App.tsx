@@ -41,6 +41,8 @@ interface AppProps {
   articleId?: string;
   articleTitle?: string;
   articleTags?: string[];
+  articlePinned?: boolean;
+  articlePinnedOrder?: number;
   articleThumbnailUrl?: string | null;
   articleThumbnailAltText?: string;
   articleThumbnailPositionX?: number;
@@ -55,6 +57,8 @@ export default function App({
   articleId,
   articleTitle,
   articleTags,
+  articlePinned,
+  articlePinnedOrder,
   articleThumbnailUrl,
   articleThumbnailAltText,
   articleThumbnailPositionX,
@@ -91,6 +95,8 @@ export default function App({
         articleId={articleId}
         articleTitle={articleTitle}
         articleTags={articleTags}
+        articlePinned={articlePinned}
+        articlePinnedOrder={articlePinnedOrder}
         articleThumbnailUrl={articleThumbnailUrl}
         articleThumbnailAltText={articleThumbnailAltText}
         articleThumbnailPositionX={articleThumbnailPositionX}
