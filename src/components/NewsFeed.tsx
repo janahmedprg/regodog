@@ -508,16 +508,23 @@ const NewsFeed: React.FC<NewsFeedProps> = ({ tag, initialNewsItems }) => {
         <section className="home-intro">
           <div className="home-intro-layout">
             <div className="home-intro-copy">
-              <p className="home-kicker">A modern blog + newsletter corner</p>
-              <h2 className="home-title">
-                Welcome to Rego Dog — where stories, fresh-baked ideas, and
-                neighborhood energy meet.
-              </h2>
+              <p className="home-kicker">
+                A small corner for stories, traditions, and everyday inspiration
+              </p>
+              <h2 className="home-title">The Story Behind Regodog</h2>
               <p className="home-description">
-                We&apos;re building this place one post at a time: practical
-                how-tos from the bakery, cozy farmhouse moments, and updates
-                from the rego project as it happens. Think of it as your morning
-                coffee scroll.
+                Hi, I&apos;m Romana. regodog started after we moved to Middle
+                Village, near Rego Park in Queens, New York, with our two black
+                Standard Schnauzers. The name simply comes from the neighborhood
+                that became part of our everyday life — and of course from our
+                dogs. The idea behind this site is simple: to share stories,
+                traditions, experiences, and things I learn along the way. Some
+                come from my Czech roots, others from everyday life, small
+                discoveries, and moments that feel worth passing on. regodog is
+                simply a place to collect those stories and share them with
+                anyone who might enjoy them too. If something here inspires you,
+                teaches you something new, or simply makes you smile, then it
+                has done its job.
               </p>
               <p className="home-description">
                 New entries are curated every week, with pinned picks right here
