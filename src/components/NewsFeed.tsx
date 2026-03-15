@@ -378,12 +378,10 @@ const NewsFeed: React.FC<NewsFeedProps> = ({ tag, initialNewsItems }) => {
   return (
     <div className="news-feed">
       <h2 className="news-header">
-        {tag ? tag.toUpperCase().replace(/_/g, " ") : "WELCOME TO RegoDog"}
+        {tag
+          ? tag.toUpperCase().replace(/_/g, " ")
+          : "WELCOME TO A small corner for stories, traditions, and everyday inspiration"}
       </h2>
-
-      <p className="home-kicker">
-        A small corner for stories, traditions, and everyday inspiration
-      </p>
 
       {isAdmin && (
         <div className="create-article-section">
@@ -514,18 +512,18 @@ const NewsFeed: React.FC<NewsFeedProps> = ({ tag, initialNewsItems }) => {
             <div className="home-intro-copy">
               <h2 className="home-title">The Story Behind Regodog</h2>
               <p className="home-description">
-                Hi, I&apos;m Romana. regodog started after we moved to Middle
-                Village, near Rego Park in Queens, New York, with our two black
-                Standard Schnauzers. The name simply comes from the neighborhood
-                that became part of our everyday life — and of course from our
-                dogs. The idea behind this site is simple: to share stories,
-                traditions, experiences, and things I learn along the way. Some
-                come from my Czech roots, others from everyday life, small
-                discoveries, and moments that feel worth passing on. regodog is
-                simply a place to collect those stories and share them with
-                anyone who might enjoy them too.
+                Regodog started after we moved to Middle Village, near Rego Park
+                in Queens, New York, with our two black Standard Schnauzers. The
+                name simply comes from the neighborhood that became part of our
+                everyday life - and of course from our dogs. The idea behind
+                this site is simple: to share stories, traditions, experiences,
+                and things learned along the way. Some come from our Czech
+                roots, others from everyday life, small discoveries, and moments
+                that feel worth passing on. Regodog is simply a place to collect
+                those stories and share them with anyone who might enjoy them
+                too.
               </p>
-              <p>
+              <p className="home-description">
                 If something here inspires you, teaches you something new, or
                 simply makes you smile, then it has done its job.
               </p>
