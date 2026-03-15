@@ -1,9 +1,10 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "../styles/styles.css";
 import { FaFacebook, FaInstagram } from "react-icons/fa";
 import { IoIosMail } from "react-icons/io";
 import logo from "../logo.svg";
 import { Link } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 
 const Footer: React.FC = () => {
   const [email, setEmail] = useState("");
@@ -17,6 +18,11 @@ const Footer: React.FC = () => {
   const [statusType, setStatusType] = useState<"idle" | "success" | "error">(
     "idle",
   );
+  const location = useLocation();
+
+  useEffect(() => {
+    setIsContactOpen(false);
+  }, [location.pathname]);
 
   const isValidEmail = (value: string) => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
