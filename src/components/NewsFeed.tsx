@@ -172,21 +172,57 @@ function parseIcsEvents(icsText: string): CalendarEvent[] {
 }
 
 function formatCalendarEventDate(event: CalendarEvent): string {
-  if (event.isAllDay) {
-    return new Intl.DateTimeFormat("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    }).format(event.startDate);
-  }
-
-  return new Intl.DateTimeFormat("en-US", {
+  const dateFormatter = new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+  const timeFormatter = new Intl.DateTimeFormat("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+  });
+  const dateTimeFormatter = new Intl.DateTimeFormat("en-US", {
     month: "short",
     day: "numeric",
     year: "numeric",
     hour: "numeric",
     minute: "2-digit",
-  }).format(event.startDate);
+  });
+
+  if (event.isAllDay) {
+    const startLabel = dateFormatter.format(event.startDate);
+    if (!event.endDate) {
+      return `${startLabel} (All day)`;
+    }
+
+    // All-day DTEND in ICS is exclusive, so show the previous day.
+    const inclusiveEndDate = new Date(
+      event.endDate.getTime() - 24 * 60 * 60 * 1000,
+    );
+
+    if (
+      inclusiveEndDate.toDateString() === event.startDate.toDateString()
+    ) {
+      return `${startLabel} (All day)`;
+    }
+
+    return `${startLabel} - ${dateFormatter.format(inclusiveEndDate)} (All day)`;
+  }
+
+  if (!event.endDate) {
+    return dateTimeFormatter.format(event.startDate);
+  }
+
+  const isSameDay = event.startDate.toDateString() === event.endDate.toDateString();
+  if (isSameDay) {
+    return `${dateFormatter.format(event.startDate)} ${timeFormatter.format(
+      event.startDate,
+    )} - ${timeFormatter.format(event.endDate)}`;
+  }
+
+  return `${dateTimeFormatter.format(event.startDate)} - ${dateTimeFormatter.format(
+    event.endDate,
+  )}`;
 }
 
 type AttachmentType =
