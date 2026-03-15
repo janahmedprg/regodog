@@ -70,7 +70,9 @@ function SaveArticleForm({
   const [selectedTags, setSelectedTags] = useState<string[]>(initialTags);
   const [isPinned, setIsPinned] = useState<boolean>(initialPinned);
   const [pinnedOrderInput, setPinnedOrderInput] = useState<string>(() =>
-    initialPinned && typeof initialPinnedOrder === "number" && Number.isFinite(initialPinnedOrder)
+    initialPinned &&
+    typeof initialPinnedOrder === "number" &&
+    Number.isFinite(initialPinnedOrder)
       ? String(Math.max(0, Math.floor(initialPinnedOrder)))
       : "",
   );
@@ -139,6 +141,11 @@ function SaveArticleForm({
       return;
     }
 
+    if (selectedTags.length === 0) {
+      setError("Please select a tag");
+      return;
+    }
+
     setError(null);
     setIsSaving(true);
     onSavingChange(true);
@@ -147,10 +154,7 @@ function SaveArticleForm({
       const nextPinnedOrderValue =
         pinnedOrderInput.trim() === ""
           ? 0
-          : Math.max(
-              0,
-              Math.floor(Number.parseInt(pinnedOrderInput, 10) || 0),
-            );
+          : Math.max(0, Math.floor(Number.parseInt(pinnedOrderInput, 10) || 0));
 
       const options: SaveEditorToFirebaseOptions = {
         title: title.trim(),
@@ -404,15 +408,21 @@ function SaveArticleForm({
             setPinnedOrderInput(nextValue);
           }}
           disabled={isSaving}
-          style={{ width: "120px", padding: "8px", fontSize: "14px", border: "1px solid #ccc", borderRadius: "4px" }}
+          style={{
+            width: "120px",
+            padding: "8px",
+            fontSize: "14px",
+            border: "1px solid #ccc",
+            borderRadius: "4px",
+          }}
         />
       </div>
 
-        <div style={{ marginBottom: "15px" }}>
-          <label
-            htmlFor="article-thumbnail"
-            style={{ display: "block", marginBottom: "5px" }}
-          >
+      <div style={{ marginBottom: "15px" }}>
+        <label
+          htmlFor="article-thumbnail"
+          style={{ display: "block", marginBottom: "5px" }}
+        >
           Thumbnail Image (optional):
         </label>
         <input
@@ -422,32 +432,32 @@ function SaveArticleForm({
           onChange={handleImageChange}
           disabled={isSaving}
           style={{ marginBottom: "10px" }}
-            />
-            <label
-              htmlFor="article-thumbnail-alt"
-              style={{ display: "block", marginBottom: "5px", marginTop: "10px" }}
-            >
-              Thumbnail Alt Text (optional):
-            </label>
-            <input
-              id="article-thumbnail-alt"
-              type="text"
-              value={thumbnailAltText}
-              onChange={(event) => setThumbnailAltText(event.target.value)}
-              placeholder="Describe thumbnail for accessibility and SEO"
-              style={{
-                width: "100%",
-                padding: "8px",
-                fontSize: "14px",
-                border: "1px solid #ccc",
-                borderRadius: "4px",
-              }}
-              disabled={isSaving}
-              maxLength={220}
-            />
-            {imagePreview && (
-              <div
-                style={{
+        />
+        <label
+          htmlFor="article-thumbnail-alt"
+          style={{ display: "block", marginBottom: "5px", marginTop: "10px" }}
+        >
+          Thumbnail Alt Text (optional):
+        </label>
+        <input
+          id="article-thumbnail-alt"
+          type="text"
+          value={thumbnailAltText}
+          onChange={(event) => setThumbnailAltText(event.target.value)}
+          placeholder="Describe thumbnail for accessibility and SEO"
+          style={{
+            width: "100%",
+            padding: "8px",
+            fontSize: "14px",
+            border: "1px solid #ccc",
+            borderRadius: "4px",
+          }}
+          disabled={isSaving}
+          maxLength={220}
+        />
+        {imagePreview && (
+          <div
+            style={{
               marginTop: "10px",
               maxWidth: "280px",
             }}

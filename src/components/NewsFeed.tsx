@@ -525,7 +525,7 @@ const NewsFeed: React.FC<NewsFeedProps> = ({ tag, initialNewsItems }) => {
               </p>
             </div>
             <aside className="home-intro-side">
-              <h3 className="home-side-title">Explore Topics</h3>
+              <h3 className="home-side-title">Explore</h3>
               <div className="home-action-row home-side-actions">
                 <Link to="/bakery" className="home-link">
                   Bakery
@@ -547,9 +547,6 @@ const NewsFeed: React.FC<NewsFeedProps> = ({ tag, initialNewsItems }) => {
 
       {isHome && (
         <section className="home-pinned-section">
-          <div className="home-section-title">
-            <h3>Pinned posts</h3>
-          </div>
           <div className="home-pinned-strip-shell">
             <button
               type="button"
