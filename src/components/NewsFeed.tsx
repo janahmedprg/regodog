@@ -8,6 +8,167 @@ import "../styles/tags.css";
 import { Link, useSearchParams } from "react-router-dom";
 
 const NEWS_ITEMS_PER_PAGE = 9;
+const UPCOMING_EVENTS_LIMIT = 5;
+
+interface CalendarEvent {
+  id: string;
+  title: string;
+  startDate: Date;
+  endDate: Date | null;
+  isAllDay: boolean;
+  location?: string;
+}
+
+function unfoldIcsText(icsText: string): string[] {
+  return icsText.replace(/\r\n[ \t]/g, "").split(/\r?\n/);
+}
+
+function parseIcsDate(value: string): { date: Date | null; isAllDay: boolean } {
+  const normalized = value.trim();
+
+  if (/^\d{8}$/.test(normalized)) {
+    const year = Number.parseInt(normalized.slice(0, 4), 10);
+    const month = Number.parseInt(normalized.slice(4, 6), 10) - 1;
+    const day = Number.parseInt(normalized.slice(6, 8), 10);
+    return {
+      date: new Date(year, month, day),
+      isAllDay: true,
+    };
+  }
+
+  const utcMatch = normalized.match(
+    /^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})Z$/,
+  );
+  if (utcMatch) {
+    const [, year, month, day, hour, minute, second] = utcMatch;
+    return {
+      date: new Date(
+        Date.UTC(
+          Number.parseInt(year, 10),
+          Number.parseInt(month, 10) - 1,
+          Number.parseInt(day, 10),
+          Number.parseInt(hour, 10),
+          Number.parseInt(minute, 10),
+          Number.parseInt(second, 10),
+        ),
+      ),
+      isAllDay: false,
+    };
+  }
+
+  const localMatch = normalized.match(
+    /^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})$/,
+  );
+  if (localMatch) {
+    const [, year, month, day, hour, minute, second] = localMatch;
+    return {
+      date: new Date(
+        Number.parseInt(year, 10),
+        Number.parseInt(month, 10) - 1,
+        Number.parseInt(day, 10),
+        Number.parseInt(hour, 10),
+        Number.parseInt(minute, 10),
+        Number.parseInt(second, 10),
+      ),
+      isAllDay: false,
+    };
+  }
+
+  return { date: null, isAllDay: false };
+}
+
+function decodeIcsText(value: string): string {
+  return value
+    .replace(/\\n/gi, "\n")
+    .replace(/\\,/g, ",")
+    .replace(/\\;/g, ";")
+    .replace(/\\\\/g, "\\");
+}
+
+function parseIcsEvents(icsText: string): CalendarEvent[] {
+  const lines = unfoldIcsText(icsText);
+  const now = Date.now();
+  const events: CalendarEvent[] = [];
+  let currentEvent: Record<string, string> | null = null;
+
+  for (const line of lines) {
+    if (line === "BEGIN:VEVENT") {
+      currentEvent = {};
+      continue;
+    }
+
+    if (line === "END:VEVENT") {
+      if (currentEvent?.DTSTART && currentEvent.SUMMARY) {
+        const parsedStart = parseIcsDate(currentEvent.DTSTART);
+        const parsedEnd = currentEvent.DTEND
+          ? parseIcsDate(currentEvent.DTEND)
+          : { date: null, isAllDay: parsedStart.isAllDay };
+
+        if (parsedStart.date) {
+          const fallbackEnd = parsedStart.isAllDay
+            ? new Date(parsedStart.date.getTime() + 24 * 60 * 60 * 1000)
+            : parsedStart.date;
+          const effectiveEnd = parsedEnd.date ?? fallbackEnd;
+
+          if (effectiveEnd.getTime() >= now) {
+            events.push({
+              id:
+                currentEvent.UID ??
+                `${currentEvent.SUMMARY}-${parsedStart.date.toISOString()}`,
+              title: decodeIcsText(currentEvent.SUMMARY),
+              startDate: parsedStart.date,
+              endDate: parsedEnd.date,
+              isAllDay: parsedStart.isAllDay,
+              location: currentEvent.LOCATION
+                ? decodeIcsText(currentEvent.LOCATION)
+                : undefined,
+            });
+          }
+        }
+      }
+
+      currentEvent = null;
+      continue;
+    }
+
+    if (!currentEvent) {
+      continue;
+    }
+
+    const separatorIndex = line.indexOf(":");
+    if (separatorIndex === -1) {
+      continue;
+    }
+
+    const rawKey = line.slice(0, separatorIndex);
+    const value = line.slice(separatorIndex + 1);
+    const key = rawKey.split(";")[0];
+
+    currentEvent[key] = value;
+  }
+
+  return events
+    .sort((a, b) => a.startDate.getTime() - b.startDate.getTime())
+    .slice(0, UPCOMING_EVENTS_LIMIT);
+}
+
+function formatCalendarEventDate(event: CalendarEvent): string {
+  if (event.isAllDay) {
+    return new Intl.DateTimeFormat("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    }).format(event.startDate);
+  }
+
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(event.startDate);
+}
 
 function toEpochMillis(value: unknown): number {
   if (!value) {
@@ -164,6 +325,9 @@ const NewsFeed: React.FC<NewsFeedProps> = ({ tag, initialNewsItems }) => {
   const [isCreating, setIsCreating] = useState<boolean>(false);
   const [newTitle, setNewTitle] = useState<string>("");
   const [searchParams, setSearchParams] = useSearchParams();
+  const currentPage = parsePageFromSearchParams(searchParams);
+  const isHome = !tag;
+  const shouldPaginate = Boolean(tag);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -172,10 +336,9 @@ const NewsFeed: React.FC<NewsFeedProps> = ({ tag, initialNewsItems }) => {
     useState<boolean>(false);
   const [canScrollPinnedRight, setCanScrollPinnedRight] =
     useState<boolean>(false);
-
-  const currentPage = parsePageFromSearchParams(searchParams);
-  const isHome = !tag;
-  const shouldPaginate = Boolean(tag);
+  const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([]);
+  const [isCalendarLoading, setIsCalendarLoading] = useState<boolean>(false);
+  const [calendarError, setCalendarError] = useState<string | null>(null);
 
   // Fetch news items
   useEffect(() => {
@@ -344,6 +507,49 @@ const NewsFeed: React.FC<NewsFeedProps> = ({ tag, initialNewsItems }) => {
       window.removeEventListener("resize", onScroll);
     };
   }, [pinnedItems.length, updatePinnedScrollState]);
+
+  useEffect(() => {
+    if (!isHome) {
+      return;
+    }
+
+    let isActive = true;
+
+    const fetchCalendarEvents = async () => {
+      setIsCalendarLoading(true);
+      setCalendarError(null);
+
+      try {
+        const response = await fetch("/api/calendar-events");
+        if (!response.ok) {
+          throw new Error(`Calendar request failed with ${response.status}`);
+        }
+
+        const calendarText = await response.text();
+        if (!isActive) {
+          return;
+        }
+
+        setCalendarEvents(parseIcsEvents(calendarText));
+      } catch (error) {
+        console.error("Error fetching calendar events:", error);
+        if (isActive) {
+          setCalendarEvents([]);
+          setCalendarError("Unable to load events right now.");
+        }
+      } finally {
+        if (isActive) {
+          setIsCalendarLoading(false);
+        }
+      }
+    };
+
+    fetchCalendarEvents();
+
+    return () => {
+      isActive = false;
+    };
+  }, [isHome]);
 
   // Check if the user is an admin
   useEffect(() => {
@@ -529,21 +735,30 @@ const NewsFeed: React.FC<NewsFeedProps> = ({ tag, initialNewsItems }) => {
               </p>
             </div>
             <aside className="home-intro-side">
-              <h3 className="home-side-title">Explore</h3>
-              <div className="home-action-row home-side-actions">
-                <Link to="/bakery" className="home-link">
-                  Bakery
-                </Link>
-                <Link to="/standard_schnauzer" className="home-link">
-                  Standard Schnauzer
-                </Link>
-                <Link to="/farmhouse" className="home-link">
-                  Farmhouse
-                </Link>
-                <Link to="/rego_project" className="home-link">
-                  Rego Project
-                </Link>
-              </div>
+              <h3 className="home-side-title">Upcoming events</h3>
+              {isCalendarLoading ? (
+                <p className="home-side-empty">Loading events...</p>
+              ) : calendarError ? (
+                <p className="home-side-empty">{calendarError}</p>
+              ) : calendarEvents.length === 0 ? (
+                <p className="home-side-empty">No upcoming events found.</p>
+              ) : (
+                <ul className="home-side-list home-events-list">
+                  {calendarEvents.map((event) => (
+                    <li key={event.id} className="home-event-item">
+                      <span className="home-event-date">
+                        {formatCalendarEventDate(event)}
+                      </span>
+                      <span className="home-event-title">{event.title}</span>
+                      {event.location && (
+                        <span className="home-event-location">
+                          {event.location}
+                        </span>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              )}
             </aside>
           </div>
         </section>

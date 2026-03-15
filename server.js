@@ -35,6 +35,9 @@ function injectSSRData(html, initialData) {
   return html.replace("</body>", `${ssrScript}</body>`);
 }
 
+const CALENDAR_FEED_URL =
+  "https://calendar.google.com/calendar/ical/6d7e684ca84861e37f3e18bd27c4cae3d22fee804dbf66f6703eb013855077dc%40group.calendar.google.com/public/basic.ics";
+
 if (isProd) {
   prodTemplate = await fs.readFile(path.resolve(root, "dist/client/index.html"), "utf-8");
   const serverEntry = path.resolve(root, "dist/server/entry-server.js");
@@ -125,11 +128,45 @@ async function serveRootStaticFallback(req, res, pathname) {
   }
 }
 
+async function serveCalendarEvents(res) {
+  try {
+    const response = await fetch(CALENDAR_FEED_URL, {
+      headers: {
+        Accept: "text/calendar, text/plain;q=0.9, */*;q=0.8",
+      },
+    });
+
+    if (!response.ok) {
+      res.writeHead(502, { "Content-Type": "application/json" });
+      res.end(
+        JSON.stringify({ error: `Calendar request failed with ${response.status}` }),
+      );
+      return;
+    }
+
+    const calendarText = await response.text();
+    res.writeHead(200, {
+      "Content-Type": "text/calendar; charset=utf-8",
+      "Cache-Control": "public, max-age=900",
+    });
+    res.end(calendarText);
+  } catch (error) {
+    console.error("Calendar proxy error:", error);
+    res.writeHead(500, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({ error: "Failed to load calendar feed" }));
+  }
+}
+
 const server = http.createServer(async (req, res) => {
   const requestUrl = req.url || "/";
   const pathname = requestUrl.split("?")[0] || "/";
 
   try {
+    if (pathname === "/api/calendar-events") {
+      await serveCalendarEvents(res);
+      return;
+    }
+
     if (!isProd) {
       await new Promise((resolve, reject) => {
         vite.middlewares(req, res, (error) => {

@@ -392,6 +392,49 @@ body {
   line-height: 1.55;
 }
 
+.home-events-list {
+  padding-left: 0;
+  list-style: none;
+  gap: 14px;
+}
+
+.home-event-item {
+  display: grid;
+  gap: 3px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(143, 132, 122, 0.25);
+}
+
+.home-event-item:last-child {
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.home-event-date {
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #8a6f52;
+}
+
+.home-event-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #2f2b27;
+}
+
+.home-event-location {
+  font-size: 13px;
+  color: #5f5851;
+}
+
+.home-side-empty {
+  margin: 0;
+  color: #5f5851;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
 .home-pinned-section {
   margin-top: 10px;
 }
