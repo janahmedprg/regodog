@@ -381,6 +381,10 @@ const NewsFeed: React.FC<NewsFeedProps> = ({ tag, initialNewsItems }) => {
         {tag ? tag.toUpperCase().replace(/_/g, " ") : "WELCOME TO RegoDog"}
       </h2>
 
+      <p className="home-kicker">
+        A small corner for stories, traditions, and everyday inspiration
+      </p>
+
       {isAdmin && (
         <div className="create-article-section">
           {!isCreating ? (
@@ -508,9 +512,6 @@ const NewsFeed: React.FC<NewsFeedProps> = ({ tag, initialNewsItems }) => {
         <section className="home-intro">
           <div className="home-intro-layout">
             <div className="home-intro-copy">
-              <p className="home-kicker">
-                A small corner for stories, traditions, and everyday inspiration
-              </p>
               <h2 className="home-title">The Story Behind Regodog</h2>
               <p className="home-description">
                 Hi, I&apos;m Romana. regodog started after we moved to Middle
@@ -522,13 +523,11 @@ const NewsFeed: React.FC<NewsFeedProps> = ({ tag, initialNewsItems }) => {
                 come from my Czech roots, others from everyday life, small
                 discoveries, and moments that feel worth passing on. regodog is
                 simply a place to collect those stories and share them with
-                anyone who might enjoy them too. If something here inspires you,
-                teaches you something new, or simply makes you smile, then it
-                has done its job.
+                anyone who might enjoy them too.
               </p>
-              <p className="home-description">
-                New entries are curated every week, with pinned picks right here
-                so you can jump straight into the favorites without hunting.
+              <p>
+                If something here inspires you, teaches you something new, or
+                simply makes you smile, then it has done its job.
               </p>
             </div>
             <aside className="home-intro-side">
