@@ -395,37 +395,100 @@ body {
 .home-events-list {
   padding-left: 0;
   list-style: none;
-  gap: 14px;
+  gap: 12px;
 }
 
 .home-event-item {
+  position: relative;
   display: grid;
-  gap: 3px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid rgba(143, 132, 122, 0.25);
+  gap: 4px;
+  padding: 12px 12px 12px 14px;
+  border: 1px solid #d9c8b6;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #fff8f0 0%, #f7eee3 100%);
+  transition: transform 0.2s ease, box-shadow 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.home-event-item::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 8px;
+  bottom: 8px;
+  width: 4px;
+  border-radius: 4px;
+  background: #8a6f52;
+}
+
+.home-event-item:hover {
+  transform: translateY(-1px);
+  border-color: #c9b29c;
+  box-shadow: 0 10px 20px rgba(74, 56, 42, 0.12);
 }
 
 .home-event-item:last-child {
-  padding-bottom: 0;
-  border-bottom: none;
+  margin-bottom: 0;
 }
 
 .home-event-date {
-  font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #8a6f52;
+  color: #6f553d;
+  background: #efe0d0;
 }
 
 .home-event-title {
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 600;
-  color: #2f2b27;
+  color: #2b241e;
+  line-height: 1.35;
 }
 
 .home-event-location {
   font-size: 13px;
-  color: #5f5851;
+  color: #5d4f42;
+  line-height: 1.4;
+}
+
+.home-event-description {
+  font-size: 13px;
+  color: #3f3730;
+  line-height: 1.45;
+  white-space: pre-line;
+}
+
+.home-event-attachments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.home-event-attachment-link {
+  font-size: 12px;
+  color: #4d3a28;
+  text-decoration: none;
+  border: 1px solid #d2bca5;
+  border-radius: 999px;
+  padding: 3px 9px;
+  background: #f6eada;
+  transition: background-color 0.2s ease, border-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.home-event-attachment-link:hover {
+  background: #efddc8;
+  border-color: #bfa07f;
+  transform: translateY(-1px);
 }
 
 .home-side-empty {

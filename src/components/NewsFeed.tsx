@@ -17,6 +17,8 @@ interface CalendarEvent {
   endDate: Date | null;
   isAllDay: boolean;
   location?: string;
+  description?: string;
+  attachmentUrls?: string[];
 }
 
 function unfoldIcsText(icsText: string): string[] {
@@ -90,10 +92,12 @@ function parseIcsEvents(icsText: string): CalendarEvent[] {
   const now = Date.now();
   const events: CalendarEvent[] = [];
   let currentEvent: Record<string, string> | null = null;
+  let currentAttachments: string[] = [];
 
   for (const line of lines) {
     if (line === "BEGIN:VEVENT") {
       currentEvent = {};
+      currentAttachments = [];
       continue;
     }
 
@@ -122,12 +126,21 @@ function parseIcsEvents(icsText: string): CalendarEvent[] {
               location: currentEvent.LOCATION
                 ? decodeIcsText(currentEvent.LOCATION)
                 : undefined,
+              description: currentEvent.DESCRIPTION
+                ? decodeIcsText(currentEvent.DESCRIPTION)
+                : undefined,
+              attachmentUrls: currentAttachments.length
+                ? currentAttachments
+                    .map((attachment) => decodeIcsText(attachment).trim())
+                    .filter((attachment) => /^https?:\/\//i.test(attachment))
+                : undefined,
             });
           }
         }
       }
 
       currentEvent = null;
+      currentAttachments = [];
       continue;
     }
 
@@ -143,6 +156,11 @@ function parseIcsEvents(icsText: string): CalendarEvent[] {
     const rawKey = line.slice(0, separatorIndex);
     const value = line.slice(separatorIndex + 1);
     const key = rawKey.split(";")[0];
+
+    if (key === "ATTACH") {
+      currentAttachments.push(value);
+      continue;
+    }
 
     currentEvent[key] = value;
   }
@@ -755,6 +773,27 @@ const NewsFeed: React.FC<NewsFeedProps> = ({ tag, initialNewsItems }) => {
                           {event.location}
                         </span>
                       )}
+                      {event.description && (
+                        <span className="home-event-description">
+                          {event.description}
+                        </span>
+                      )}
+                      {event.attachmentUrls &&
+                        event.attachmentUrls.length > 0 && (
+                          <div className="home-event-attachments">
+                            {event.attachmentUrls.map((url, index) => (
+                              <a
+                                key={`${event.id}-attachment-${index}`}
+                                href={url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="home-event-attachment-link"
+                              >
+                                Attachment {index + 1}
+                              </a>
+                            ))}
+                          </div>
+                        )}
                     </li>
                   ))}
                 </ul>
