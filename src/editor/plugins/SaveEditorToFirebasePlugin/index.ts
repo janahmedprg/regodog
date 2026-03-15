@@ -408,7 +408,7 @@ export async function saveEditorToFirebase(
       thumbnailUrl = newUrl;
     }
 
-  const articleData: {
+    const articleData: {
       title: string;
       editorStateUrl: string;
       htmlContentUrl: string;
@@ -435,7 +435,6 @@ export async function saveEditorToFirebase(
       pinnedOrder: Number.isFinite(pinnedOrder)
         ? Math.max(0, Math.floor(pinnedOrder))
         : 0,
-      pinnedOrder,
       lastUpdated: new Date(),
       author: auth.currentUser?.uid || "anonymous",
     };
