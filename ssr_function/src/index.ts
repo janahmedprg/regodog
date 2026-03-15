@@ -37,6 +37,8 @@ const MIME_TYPES: Record<string, string> = {
   ".woff2": "font/woff2",
 };
 const FALLBACK_STATIC_FILES = new Set(["/sitemap.xml"]);
+const CALENDAR_FEED_URL =
+  "https://calendar.google.com/calendar/ical/6d7e684ca84861e37f3e18bd27c4cae3d22fee804dbf66f6703eb013855077dc%40group.calendar.google.com/public/basic.ics";
 
 const CONTACT_FORM_RECIPIENT = "romana.regodog@gmail.com";
 
@@ -245,12 +247,45 @@ async function serveRootStaticFallback(
   }
 }
 
+async function serveCalendarEvents(
+  res: Parameters<Parameters<typeof onRequest>[0]>[1]
+) {
+  try {
+    const response = await fetch(CALENDAR_FEED_URL, {
+      headers: {
+        Accept: "text/calendar, text/plain;q=0.9, */*;q=0.8",
+      },
+    });
+
+    if (!response.ok) {
+      res.status(502).json({
+        error: `Calendar request failed with ${response.status}`,
+      });
+      return;
+    }
+
+    const calendarText = await response.text();
+    res.set("Content-Type", "text/calendar; charset=utf-8");
+    res.set("Cache-Control", "public, max-age=900");
+    res.status(200).send(calendarText);
+  } catch (error) {
+    console.error("Calendar proxy error:", error);
+    res.status(500).json({ error: "Failed to load calendar feed" });
+  }
+}
+
 export const ssrApp = onRequest(async (req, res) => {
   try {
     await initSSR();
 
     const requestUrl = req.originalUrl || req.url || "/";
     const pathname = requestUrl.split("?")[0] || "/";
+
+    if (pathname === "/api/calendar-events") {
+      await serveCalendarEvents(res);
+      return;
+    }
+
     const isAssetRequest = pathname.includes(".") || pathname.startsWith("/assets/");
 
     if (isAssetRequest) {
