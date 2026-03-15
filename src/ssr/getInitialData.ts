@@ -35,13 +35,47 @@ type RawNewsRecord = {
   pinnedOrder?: number;
 };
 
+function decodeHtmlEntities(text: string): string {
+  if (!text || !text.includes("&")) {
+    return text;
+  }
+
+  const namedEntities: Record<string, string> = {
+    amp: "&",
+    lt: "<",
+    gt: ">",
+    quot: '"',
+    apos: "'",
+    nbsp: " ",
+  };
+
+  return text.replace(/&(#\d+|#x[\da-fA-F]+|[a-zA-Z]+);/g, (match, entity) => {
+    if (entity[0] === "#") {
+      const isHex = entity[1]?.toLowerCase() === "x";
+      const codePoint = Number.parseInt(entity.slice(isHex ? 2 : 1), isHex ? 16 : 10);
+      if (Number.isNaN(codePoint)) {
+        return match;
+      }
+      try {
+        return String.fromCodePoint(codePoint);
+      } catch {
+        return match;
+      }
+    }
+
+    return namedEntities[entity] ?? match;
+  });
+}
+
 function extractTextFromHtml(html: string): string {
-  return html
-    .replace(/<style[\s\S]*?>[\s\S]*?<\/style>/gi, " ")
-    .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, " ")
-    .replace(/<[^>]+>/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
+  return decodeHtmlEntities(
+    html
+      .replace(/<style[\s\S]*?>[\s\S]*?<\/style>/gi, " ")
+      .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, " ")
+      .replace(/<[^>]+>/g, " ")
+      .replace(/\s+/g, " ")
+      .trim()
+  );
 }
 
 function truncateWords(text: string, wordLimit: number): string {

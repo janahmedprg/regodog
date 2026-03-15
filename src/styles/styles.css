@@ -286,7 +286,7 @@ body {
 
 .home-intro-layout {
   display: grid;
-  grid-template-columns: 1.75fr 0.7fr;
+  grid-template-columns: 1.35fr 1.1fr;
   gap: 22px;
   align-items: start;
 }
@@ -370,8 +370,10 @@ body {
   border: 1px solid #ddd2c7;
   border-radius: 4px;
   background: #f9f4ed;
-  padding: 16px 18px;
+  padding: 0px;
   min-width: 0;
+  max-height: 350px;
+  overflow-y: scroll;
 }
 
 .home-side-title {
@@ -380,20 +382,27 @@ body {
   text-transform: uppercase;
   letter-spacing: 1px;
   color: #6b645e;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background-color: #f9f4ed;
+  margin-top: 0px;
+  padding: 8px 16px;
 }
 
 .home-side-list {
   margin: 0;
-  padding-left: 18px;
   display: grid;
   gap: 8px;
   color: #3d3833;
   font-size: 15px;
   line-height: 1.55;
+  padding-left: 26px;
+  padding-right: 26px;
+  padding-bottom: 26px;
 }
 
 .home-events-list {
-  padding-left: 0;
   list-style: none;
   gap: 12px;
 }
@@ -419,12 +428,6 @@ body {
   width: 4px;
   border-radius: 4px;
   background: #8a6f52;
-}
-
-.home-event-item:hover {
-  transform: translateY(-1px);
-  border-color: #c9b29c;
-  box-shadow: 0 10px 20px rgba(74, 56, 42, 0.12);
 }
 
 .home-event-item:last-child {
@@ -454,9 +457,18 @@ body {
 }
 
 .home-event-location {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   font-size: 13px;
   color: #5d4f42;
   line-height: 1.4;
+}
+
+.home-event-location-icon {
+  color: #8a6f52;
+  font-size: 12px;
+  flex: 0 0 auto;
 }
 
 .home-event-description {
@@ -467,13 +479,18 @@ body {
 }
 
 .home-event-attachments {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.home-event-attachment-item {
+  display: grid;
   gap: 8px;
-  margin-top: 2px;
 }
 
 .home-event-attachment-link {
+  width: fit-content;
   font-size: 12px;
   color: #4d3a28;
   text-decoration: none;
@@ -489,6 +506,35 @@ body {
   background: #efddc8;
   border-color: #bfa07f;
   transform: translateY(-1px);
+}
+
+.home-event-attachment-embed {
+  width: 100%;
+  max-width: 100%;
+  border: 1px solid #dccab7;
+  border-radius: 8px;
+  background: #f9f2ea;
+}
+
+.home-event-attachment-embed--image {
+  max-height: 220px;
+  object-fit: cover;
+}
+
+.home-event-attachment-embed--video {
+  aspect-ratio: 16 / 9;
+}
+
+.home-event-attachment-embed--audio {
+  height: 42px;
+}
+
+.home-event-attachment-embed--pdf {
+  height: 260px;
+}
+
+.home-event-attachment-embed--drive {
+  height: 300px;
 }
 
 .home-side-empty {

@@ -3,6 +3,7 @@ import React, { Suspense, useEffect, useState } from "react";
 import { auth, db, collection, getDocs } from "../config/firebase.js";
 import { onAuthStateChanged, User } from "firebase/auth";
 import NewsItem, { NewsItemProps } from "./NewsItem.js";
+import { FaMapMarkerAlt } from "react-icons/fa";
 import "../styles/styles.css";
 import "../styles/tags.css";
 import { Link, useSearchParams } from "react-router-dom";
@@ -186,6 +187,107 @@ function formatCalendarEventDate(event: CalendarEvent): string {
     hour: "numeric",
     minute: "2-digit",
   }).format(event.startDate);
+}
+
+type AttachmentType =
+  | "google-drive"
+  | "image"
+  | "video"
+  | "audio"
+  | "pdf"
+  | "youtube"
+  | "file";
+
+function getAttachmentType(url: string): AttachmentType {
+  const normalized = url.trim().toLowerCase();
+  if (!normalized) {
+    return "file";
+  }
+
+  if (normalized.includes("drive.google.com")) {
+    return "google-drive";
+  }
+
+  if (normalized.includes("youtube.com/watch") || normalized.includes("youtu.be/")) {
+    return "youtube";
+  }
+
+  let pathname = normalized;
+  try {
+    pathname = new URL(normalized).pathname.toLowerCase();
+  } catch {
+    pathname = normalized.split("?")[0];
+  }
+
+  if (/\.(png|jpe?g|gif|webp|avif|svg)$/i.test(pathname)) {
+    return "image";
+  }
+  if (/\.(mp4|webm|ogg|mov)$/i.test(pathname)) {
+    return "video";
+  }
+  if (/\.(mp3|wav|aac|m4a|ogg)$/i.test(pathname)) {
+    return "audio";
+  }
+  if (/\.pdf$/i.test(pathname)) {
+    return "pdf";
+  }
+
+  return "file";
+}
+
+function toYouTubeEmbedUrl(url: string): string | null {
+  try {
+    const parsed = new URL(url);
+    if (parsed.hostname.includes("youtube.com")) {
+      const videoId = parsed.searchParams.get("v");
+      return videoId ? `https://www.youtube.com/embed/${videoId}` : null;
+    }
+    if (parsed.hostname.includes("youtu.be")) {
+      const videoId = parsed.pathname.replace("/", "");
+      return videoId ? `https://www.youtube.com/embed/${videoId}` : null;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+function toGoogleDriveEmbedUrl(url: string): string | null {
+  try {
+    const parsed = new URL(url);
+    if (!parsed.hostname.includes("drive.google.com")) {
+      return null;
+    }
+
+    const idParam = parsed.searchParams.get("id");
+    if (idParam) {
+      return `https://drive.google.com/file/d/${idParam}/preview`;
+    }
+
+    const pathMatch = parsed.pathname.match(
+      /\/(?:file|document|spreadsheets|presentation)\/d\/([^/]+)/i,
+    );
+    if (pathMatch?.[1]) {
+      return `https://drive.google.com/file/d/${pathMatch[1]}/preview`;
+    }
+
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+function getAttachmentLabel(url: string, index: number): string {
+  try {
+    const parsed = new URL(url);
+    const segment = parsed.pathname.split("/").filter(Boolean).pop();
+    if (segment) {
+      return decodeURIComponent(segment);
+    }
+  } catch {
+    // Fall back to default label.
+  }
+  return `Attachment ${index + 1}`;
 }
 
 function toEpochMillis(value: unknown): number {
@@ -770,7 +872,11 @@ const NewsFeed: React.FC<NewsFeedProps> = ({ tag, initialNewsItems }) => {
                       <span className="home-event-title">{event.title}</span>
                       {event.location && (
                         <span className="home-event-location">
-                          {event.location}
+                          <FaMapMarkerAlt
+                            className="home-event-location-icon"
+                            aria-hidden="true"
+                          />
+                          <span>{event.location}</span>
                         </span>
                       )}
                       {event.description && (
@@ -781,17 +887,100 @@ const NewsFeed: React.FC<NewsFeedProps> = ({ tag, initialNewsItems }) => {
                       {event.attachmentUrls &&
                         event.attachmentUrls.length > 0 && (
                           <div className="home-event-attachments">
-                            {event.attachmentUrls.map((url, index) => (
-                              <a
-                                key={`${event.id}-attachment-${index}`}
-                                href={url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="home-event-attachment-link"
-                              >
-                                Attachment {index + 1}
-                              </a>
-                            ))}
+                            {event.attachmentUrls.map((url, index) => {
+                              const attachmentType = getAttachmentType(url);
+                              const attachmentLabel = getAttachmentLabel(
+                                url,
+                                index,
+                              );
+                              const youtubeEmbedUrl =
+                                attachmentType === "youtube"
+                                  ? toYouTubeEmbedUrl(url)
+                                  : null;
+                              const driveEmbedUrl =
+                                attachmentType === "google-drive"
+                                  ? toGoogleDriveEmbedUrl(url)
+                                  : null;
+                              const hasInlineEmbed =
+                                attachmentType === "image" ||
+                                attachmentType === "video" ||
+                                attachmentType === "audio" ||
+                                attachmentType === "pdf" ||
+                                (attachmentType === "youtube" &&
+                                  Boolean(youtubeEmbedUrl)) ||
+                                (attachmentType === "google-drive" &&
+                                  Boolean(driveEmbedUrl));
+
+                              return (
+                                <div
+                                  key={`${event.id}-attachment-${index}`}
+                                  className="home-event-attachment-item"
+                                >
+                                  {attachmentType === "image" && (
+                                    <img
+                                      src={url}
+                                      alt={attachmentLabel}
+                                      className="home-event-attachment-embed home-event-attachment-embed--image"
+                                      loading="lazy"
+                                    />
+                                  )}
+                                  {attachmentType === "video" && (
+                                    <video
+                                      controls
+                                      preload="metadata"
+                                      className="home-event-attachment-embed home-event-attachment-embed--video"
+                                    >
+                                      <source src={url} />
+                                    </video>
+                                  )}
+                                  {attachmentType === "audio" && (
+                                    <audio
+                                      controls
+                                      preload="metadata"
+                                      className="home-event-attachment-embed home-event-attachment-embed--audio"
+                                    >
+                                      <source src={url} />
+                                    </audio>
+                                  )}
+                                  {attachmentType === "pdf" && (
+                                    <iframe
+                                      src={url}
+                                      title={attachmentLabel}
+                                      className="home-event-attachment-embed home-event-attachment-embed--pdf"
+                                    />
+                                  )}
+                                  {attachmentType === "youtube" &&
+                                    youtubeEmbedUrl && (
+                                      <iframe
+                                        src={youtubeEmbedUrl}
+                                        title={attachmentLabel}
+                                        className="home-event-attachment-embed home-event-attachment-embed--video"
+                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                        allowFullScreen
+                                      />
+                                    )}
+                                  {attachmentType === "google-drive" &&
+                                    driveEmbedUrl && (
+                                      <iframe
+                                        src={driveEmbedUrl}
+                                        title={attachmentLabel}
+                                        className="home-event-attachment-embed home-event-attachment-embed--drive"
+                                        allow="autoplay"
+                                      />
+                                    )}
+                                  {!hasInlineEmbed && (
+                                    <a
+                                      href={url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="home-event-attachment-link"
+                                    >
+                                      {attachmentLabel}
+                                    </a>
+                                  )}
+                                </div>
+                              );
+                            })}
                           </div>
                         )}
                     </li>

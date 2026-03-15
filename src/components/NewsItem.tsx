@@ -3,6 +3,38 @@ import { useNavigate } from "react-router-dom";
 import "../styles/styles.css";
 import "../styles/tags.css";
 
+function decodeHtmlEntities(text: string): string {
+  if (!text || !text.includes("&")) {
+    return text;
+  }
+
+  const namedEntities: Record<string, string> = {
+    amp: "&",
+    lt: "<",
+    gt: ">",
+    quot: '"',
+    apos: "'",
+    nbsp: " ",
+  };
+
+  return text.replace(/&(#\d+|#x[\da-fA-F]+|[a-zA-Z]+);/g, (match, entity) => {
+    if (entity[0] === "#") {
+      const isHex = entity[1]?.toLowerCase() === "x";
+      const codePoint = Number.parseInt(entity.slice(isHex ? 2 : 1), isHex ? 16 : 10);
+      if (Number.isNaN(codePoint)) {
+        return match;
+      }
+      try {
+        return String.fromCodePoint(codePoint);
+      } catch {
+        return match;
+      }
+    }
+
+    return namedEntities[entity] ?? match;
+  });
+}
+
 export interface NewsItemProps {
   title: string;
   content?: string;
@@ -51,12 +83,14 @@ const NewsItem: React.FC<NewsItemProps> = ({
   };
 
   const extractTextFromHtml = (html: string): string =>
-    html
+    decodeHtmlEntities(
+      html
       .replace(/<style[\s\S]*?>[\s\S]*?<\/style>/gi, " ")
       .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, " ")
       .replace(/<[^>]+>/g, " ")
       .replace(/\s+/g, " ")
-      .trim();
+      .trim(),
+    );
 
   // Fetch preview on client only when SSR preview text is not provided.
   useEffect(() => {
@@ -77,6 +111,9 @@ const NewsItem: React.FC<NewsItemProps> = ({
   }, [htmlContentUrl, previewText]);
 
   const htmlPreview = previewText || htmlPreviewText;
+  const decodedTitle = decodeHtmlEntities(title);
+  const decodedContent = decodeHtmlEntities(content || "");
+  const decodedHtmlPreview = htmlPreview ? decodeHtmlEntities(htmlPreview) : "";
 
   const handleReadArticle = () => {
     navigate(`/article/${link}`);
@@ -112,15 +149,15 @@ const NewsItem: React.FC<NewsItemProps> = ({
         </div>
       )}
 
-      <p className="news-title">{title}</p>
+      <p className="news-title">{decodedTitle}</p>
       <p className="news-date">{formatDate(createdAt)}</p>
 
       <div className="news-content">
         {/* Prefer HTML preview if available */}
         {htmlContentUrl ? (
-          <p>{htmlPreview || truncateText(content, 20)}</p>
+          <p>{decodedHtmlPreview || truncateText(decodedContent, 20)}</p>
         ) : (
-          <p>{truncateText(content, 20)}</p>
+          <p>{truncateText(decodedContent, 20)}</p>
         )}
       </div>
 
