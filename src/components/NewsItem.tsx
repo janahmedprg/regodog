@@ -3,6 +3,13 @@ import { useNavigate } from "react-router-dom";
 import "../styles/styles.css";
 import "../styles/tags.css";
 
+const NEWS_DATE_FORMATTER = new Intl.DateTimeFormat("en-US", {
+  year: "numeric",
+  month: "long",
+  day: "numeric",
+  timeZone: "UTC",
+});
+
 function decodeHtmlEntities(text: string): string {
   if (!text || !text.includes("&")) {
     return text;
@@ -126,11 +133,7 @@ const NewsItem: React.FC<NewsItemProps> = ({
         ? timestamp.toDate()
         : new Date(timestamp);
 
-    return date.toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
+    return NEWS_DATE_FORMATTER.format(date);
   };
 
   return (

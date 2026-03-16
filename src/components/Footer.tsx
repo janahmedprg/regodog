@@ -248,7 +248,7 @@ const Footer: React.FC = () => {
           </div>
         )}
         <div className="footer-copyright">
-          Copyright {new Date().getFullYear()}, Regodog - All Rights Reserved.
+          Copyright {new Date().getUTCFullYear()}, Regodog - All Rights Reserved.
         </div>
       </div>
     </footer>
