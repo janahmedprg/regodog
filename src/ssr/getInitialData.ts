@@ -33,7 +33,63 @@ type RawNewsRecord = {
   editorStateUrl?: string;
   pinned?: boolean;
   pinnedOrder?: number;
+  tagPinnedOrders?: Record<string, number>;
 };
+
+function normalizeTagPinnedOrders(
+  value: unknown,
+): Record<string, number> | undefined {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return undefined;
+  }
+
+  const entries = Object.entries(value).filter(
+    ([, entry]) => typeof entry === "number" && Number.isFinite(entry),
+  );
+
+  if (entries.length === 0) {
+    return undefined;
+  }
+
+  return Object.fromEntries(entries);
+}
+
+function getTagPinnedOrder(
+  item: { tagPinnedOrders?: Record<string, number> },
+  tag: string,
+): number | undefined {
+  const value = item.tagPinnedOrders?.[tag];
+  return typeof value === "number" && Number.isFinite(value) ? value : undefined;
+}
+
+function sortNewsItems(items: SSRNewsItem[], tag?: string): SSRNewsItem[] {
+  return [...items].sort((a, b) => {
+    if (tag) {
+      const aOrder = getTagPinnedOrder(a, tag);
+      const bOrder = getTagPinnedOrder(b, tag);
+
+      if (aOrder !== undefined || bOrder !== undefined) {
+        if (aOrder === undefined) {
+          return 1;
+        }
+        if (bOrder === undefined) {
+          return -1;
+        }
+        if (aOrder !== bOrder) {
+          return aOrder - bOrder;
+        }
+      }
+    }
+
+    const aTime = a.createdAt ?? 0;
+    const bTime = b.createdAt ?? 0;
+    if (aTime !== bTime) {
+      return bTime - aTime;
+    }
+
+    return String(b.id).localeCompare(String(a.id));
+  });
+}
 
 function decodeHtmlEntities(text: string): string {
   if (!text || !text.includes("&")) {
@@ -244,6 +300,9 @@ function toRawNewsRecord(document: FirestoreDocument): RawNewsRecord {
     (firestoreValueToJs(fields.editorStateUrl) as string | undefined) || undefined;
   const pinned = firestoreValueToJs(fields.pinned);
   const pinnedOrder = firestoreValueToJs(fields.pinnedOrder);
+  const tagPinnedOrders = normalizeTagPinnedOrders(
+    firestoreValueToJs(fields.tagPinnedOrders),
+  );
 
   const tagsRaw = firestoreValueToJs(fields.tags);
   const tags = Array.isArray(tagsRaw)
@@ -265,6 +324,7 @@ function toRawNewsRecord(document: FirestoreDocument): RawNewsRecord {
     newsFeedThumbnailPositionY,
     tags,
     editorStateUrl,
+    tagPinnedOrders,
     pinnedOrder:
       typeof pinnedOrder === "number" && Number.isFinite(pinnedOrder)
         ? pinnedOrder
@@ -333,7 +393,7 @@ async function fetchNews(tag?: string): Promise<SSRNewsItem[]> {
     : allItems;
 
   const items = await Promise.all(
-    filtered.map(async ({ tags: _tags, ...rest }) => {
+    filtered.map(async (rest) => {
       const item: SSRNewsItem = {
         ...rest,
         createdAt: parseCreatedAt(rest.createdAt),
@@ -356,11 +416,7 @@ async function fetchNews(tag?: string): Promise<SSRNewsItem[]> {
     })
   );
 
-  return items.sort((a, b) => {
-    const aTime = a.createdAt ?? 0;
-    const bTime = b.createdAt ?? 0;
-    return bTime - aTime;
-  });
+  return sortNewsItems(items, tag);
 }
 
 async function fetchArticleById(id: string): Promise<SSRArticle | undefined> {
@@ -375,6 +431,7 @@ async function fetchArticleById(id: string): Promise<SSRArticle | undefined> {
     tags: sourceArticle.tags || [],
     pinned: sourceArticle.pinned || false,
     pinnedOrder: sourceArticle.pinnedOrder,
+    tagPinnedOrders: sourceArticle.tagPinnedOrders,
     thumbnailUrl: sourceArticle.thumbnailUrl,
     thumbnailAltText: sourceArticle.thumbnailAltText,
     thumbnailPositionX: sourceArticle.thumbnailPositionX,

@@ -23,7 +23,17 @@ import {type RefObject, useCallback, useEffect, useRef, useState} from 'react';
 import useModal from '../hooks/useModal';
 import InsertGalleryDialog from '../ui/GalleryInsertDialog';
 import joinClasses from '../utils/joinClasses';
-import {$createGalleryNode, $isGalleryNode, GalleryImage} from './GalleryNode';
+import {
+  $createGalleryNode,
+  DEFAULT_GALLERY_SIZE,
+  $isGalleryNode,
+  DEFAULT_GALLERY_STYLE,
+  GalleryImage,
+  GalleryStyle,
+  GALLERY_STYLES,
+  normalizeGallerySize,
+  normalizeGalleryStyle,
+} from './GalleryNode';
 
 function clamp(value: number, min: number, max: number): number {
   if (value < min) {
@@ -78,10 +88,14 @@ function useGalleryScrollState(containerRef: RefObject<HTMLElement | null>) {
 export default function GalleryComponent({
   images,
   activeIndex,
+  style,
+  size,
   nodeKey,
 }: {
   activeIndex: number;
   images: GalleryImage[];
+  style: GalleryStyle;
+  size: number;
   nodeKey: NodeKey;
 }): JSX.Element {
   const [editor] = useLexicalComposerContext();
@@ -95,6 +109,8 @@ export default function GalleryComponent({
     0,
     Math.max(0, images.length - 1),
   );
+  const galleryStyle = normalizeGalleryStyle(style ?? DEFAULT_GALLERY_STYLE);
+  const gallerySize = normalizeGallerySize(size ?? DEFAULT_GALLERY_SIZE);
   const currentImage = images[normalizedActiveIndex];
 
   const {canScrollLeft, canScrollRight, refresh} =
@@ -136,14 +152,24 @@ export default function GalleryComponent({
     });
   };
 
-  const replaceGalleryImages = (nextImages: GalleryImage[]) => {
+  const replaceGallery = ({
+    images: nextImages,
+    style: nextStyle,
+    size: nextSize,
+  }: {
+    images: GalleryImage[];
+    style: GalleryStyle;
+    size: number;
+  }) => {
     editor.update(() => {
       const node = $getNodeByKey(nodeKey);
       if (!$isGalleryNode(node)) {
         return;
       }
       const activeGalleryIndex = node.getActiveIndex();
-      node.replace($createGalleryNode(nextImages, activeGalleryIndex));
+      node.replace(
+        $createGalleryNode(nextImages, activeGalleryIndex, nextStyle, nextSize),
+      );
     });
   };
 
@@ -156,6 +182,17 @@ export default function GalleryComponent({
     strip.scrollBy({left: offset, behavior: 'smooth'});
   };
 
+  const moveActiveImage = (direction: 'left' | 'right') => {
+    if (images.length === 0) {
+      return;
+    }
+    const nextIndex =
+      direction === 'left'
+        ? Math.max(0, normalizedActiveIndex - 1)
+        : Math.min(images.length - 1, normalizedActiveIndex + 1);
+    activateImage(nextIndex);
+  };
+
   if (images.length === 0) {
     return <div className="GalleryNode__empty">No images in gallery.</div>;
   }
@@ -164,64 +201,144 @@ export default function GalleryComponent({
     <div
       className={joinClasses(
         'GalleryNode__container',
+        galleryStyle === GALLERY_STYLES.STRIP && 'GalleryNode__container--strip',
+        galleryStyle === GALLERY_STYLES.SLIDESHOW &&
+          'GalleryNode__container--slideshow',
         isSelected ? 'focused' : '',
       )}
+      data-gallery-style={galleryStyle}
+      data-gallery-size={gallerySize}
+      style={{
+        width: `${gallerySize}%`,
+        maxWidth: '100%',
+        marginLeft: 'auto',
+        marginRight: 'auto',
+      }}
       ref={containerRef}
     >
-      <div className="GalleryNode__main">
-        <img
-          className="GalleryNode__mainImage"
-          src={currentImage.src}
-          alt={currentImage.altText || `Gallery image ${normalizedActiveIndex + 1}`}
-        />
-      </div>
-      <div className="GalleryNode__thumbnails">
-        <button
-          className="GalleryNode__arrow"
-          data-direction="left"
-          disabled={!canScrollLeft}
-          type="button"
-          onClick={() => scroll('left')}
-          aria-label="Scroll thumbnails left"
-        >
-          ‹
-        </button>
-        <div className="GalleryNode__thumbStrip" ref={stripRef}>
-          {images.map((image, index) => {
-            const isActive = index === normalizedActiveIndex;
-            return (
-              <button
-                key={`${image.src}-${index}`}
-                className={joinClasses(
-                  'GalleryNode__thumbButton',
-                  isActive && 'GalleryNode__thumbButtonActive',
-                )}
-                type="button"
-                onClick={() => {
-                  activateImage(index);
-                }}
-                aria-label={`Select image ${index + 1}`}
-              >
+      {galleryStyle === GALLERY_STYLES.STRIP ? (
+        <div className="GalleryNode__carousel">
+          <button
+            className="GalleryNode__arrow"
+            data-direction="left"
+            disabled={!canScrollLeft}
+            type="button"
+            onClick={() => scroll('left')}
+            aria-label="Scroll gallery left"
+          >
+            ‹
+          </button>
+          <div className="GalleryNode__carouselViewport" ref={stripRef}>
+            <div className="GalleryNode__carouselTrack">
+              {images.map((image, index) => (
                 <img
-                  className="GalleryNode__thumbnail"
+                  key={`${image.src}-${index}`}
+                  className="GalleryNode__carouselImage"
                   src={image.src}
-                  alt={image.altText || `Gallery thumbnail ${index + 1}`}
+                  alt={image.altText || `Gallery image ${index + 1}`}
                 />
-              </button>
-            );
-          })}
+              ))}
+            </div>
+          </div>
+          <button
+            className="GalleryNode__arrow"
+            data-direction="right"
+            disabled={!canScrollRight}
+            type="button"
+            onClick={() => scroll('right')}
+            aria-label="Scroll gallery right"
+          >
+            ›
+          </button>
         </div>
-        <button
-          className="GalleryNode__arrow"
-          data-direction="right"
-          disabled={!canScrollRight}
-          type="button"
-          onClick={() => scroll('right')}
-          aria-label="Scroll thumbnails right"
-        >
-          ›
-        </button>
-      </div>
+      ) : galleryStyle === GALLERY_STYLES.SLIDESHOW ? (
+        <div className="GalleryNode__slideshow">
+          <button
+            className="GalleryNode__arrow GalleryNode__slideshowArrow"
+            data-direction="left"
+            disabled={normalizedActiveIndex === 0}
+            type="button"
+            onClick={() => moveActiveImage('left')}
+            aria-label="Show previous image"
+          >
+            ‹
+          </button>
+          <div className="GalleryNode__main">
+            <img
+              className="GalleryNode__mainImage"
+              src={currentImage.src}
+              alt={currentImage.altText || `Gallery image ${normalizedActiveIndex + 1}`}
+            />
+          </div>
+          <button
+            className="GalleryNode__arrow GalleryNode__slideshowArrow"
+            data-direction="right"
+            disabled={normalizedActiveIndex === images.length - 1}
+            type="button"
+            onClick={() => moveActiveImage('right')}
+            aria-label="Show next image"
+          >
+            ›
+          </button>
+        </div>
+      ) : (
+        <>
+          <div className="GalleryNode__main">
+            <img
+              className="GalleryNode__mainImage"
+              src={currentImage.src}
+              alt={currentImage.altText || `Gallery image ${normalizedActiveIndex + 1}`}
+            />
+          </div>
+          <div className="GalleryNode__thumbnails">
+            <button
+              className="GalleryNode__arrow"
+              data-direction="left"
+              disabled={!canScrollLeft}
+              type="button"
+              onClick={() => scroll('left')}
+              aria-label="Scroll thumbnails left"
+            >
+              ‹
+            </button>
+            <div className="GalleryNode__thumbStrip" ref={stripRef}>
+              {images.map((image, index) => {
+                const isActive = index === normalizedActiveIndex;
+                return (
+                  <button
+                    key={`${image.src}-${index}`}
+                    className={joinClasses(
+                      'GalleryNode__thumbButton',
+                      isActive && 'GalleryNode__thumbButtonActive',
+                    )}
+                    type="button"
+                    onClick={() => {
+                      activateImage(index);
+                    }}
+                    aria-label={`Select image ${index + 1}`}
+                  >
+                    <img
+                      className="GalleryNode__thumbnail"
+                      src={image.src}
+                      alt={image.altText || `Gallery thumbnail ${index + 1}`}
+                    />
+                  </button>
+                );
+              })}
+            </div>
+            <button
+              className="GalleryNode__arrow"
+              data-direction="right"
+              disabled={!canScrollRight}
+              type="button"
+              onClick={() => scroll('right')}
+              aria-label="Scroll thumbnails right"
+            >
+              ›
+            </button>
+          </div>
+        </>
+      )}
       <div className="GalleryNode__editActions">
         <button
           className="GalleryNode__editButton"
@@ -231,8 +348,10 @@ export default function GalleryComponent({
                 activeEditor={editor}
                 onClose={onClose}
                 initialImages={images}
+                initialStyle={galleryStyle}
+                initialSize={gallerySize}
                 submitButtonText="Update Gallery"
-                onSubmit={replaceGalleryImages}
+                onSubmit={replaceGallery}
               />
             ));
           }}

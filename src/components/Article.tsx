@@ -31,6 +31,7 @@ interface ArticleData {
   tags?: string[];
   pinned?: boolean;
   pinnedOrder?: number;
+  tagPinnedOrders?: Record<string, number>;
   thumbnailUrl?: string;
   thumbnailAltText?: string;
   thumbnailPositionX?: number;
@@ -662,6 +663,7 @@ const Article: React.FC<ArticleProps> = ({ initialArticle }) => {
                 articleTags={selectedTags}
                 articlePinned={article.pinned}
                 articlePinnedOrder={article.pinnedOrder}
+                articleTagPinnedOrders={article.tagPinnedOrders}
                 articleThumbnailUrl={imagePreview || article.thumbnailUrl}
                 articleThumbnailAltText={article.thumbnailAltText}
                 articleThumbnailPositionX={article.thumbnailPositionX}

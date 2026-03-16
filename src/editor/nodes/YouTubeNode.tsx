@@ -52,7 +52,7 @@ function YouTubeComponent({
         height="315"
         src={`https://www.youtube-nocookie.com/embed/${videoID}`}
         frameBorder="0"
-        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
         allowFullScreen={true}
         title="YouTube video"
       />
@@ -119,7 +119,7 @@ export class YouTubeNode extends DecoratorBlockNode {
     element.setAttribute('frameborder', '0');
     element.setAttribute(
       'allow',
-      'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture',
+      'accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture',
     );
     element.setAttribute('allowfullscreen', 'true');
     element.setAttribute('title', 'YouTube video');

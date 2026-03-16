@@ -13,7 +13,17 @@ import {type ChangeEvent, useMemo, useState} from 'react';
 
 import Button from './Button';
 import {DialogActions} from './Dialog';
-import {GalleryImage} from '../nodes/GalleryNode';
+import Select from './Select';
+import TextInput from './TextInput';
+import {
+  DEFAULT_GALLERY_SIZE,
+  DEFAULT_GALLERY_STYLE,
+  GalleryImage,
+  GalleryStyle,
+  GALLERY_STYLES,
+  normalizeGallerySize,
+  normalizeGalleryStyle,
+} from '../nodes/GalleryNode';
 import '../plugins/GalleryPlugin/GalleryPlugin.css';
 
 function parseGalleryText(value: string): GalleryImage[] {
@@ -90,19 +100,33 @@ export default function InsertGalleryDialog({
   onClose,
   onSubmit,
   initialImages,
+  initialStyle,
+  initialSize,
   submitButtonText,
   title,
 }: {
   activeEditor: LexicalEditor;
   onClose: () => void;
-  onSubmit: (images: GalleryImage[]) => void;
+  onSubmit: (payload: {
+    images: GalleryImage[];
+    style: GalleryStyle;
+    size: number;
+  }) => void;
   initialImages?: readonly GalleryImage[];
+  initialStyle?: GalleryStyle;
+  initialSize?: number;
   submitButtonText?: string;
   title?: string;
 }): JSX.Element {
   const [value, setValue] = useState('');
   const [uploadedImages, setUploadedImages] = useState<GalleryImage[]>(() =>
     [...(initialImages || [])],
+  );
+  const [style, setStyle] = useState<GalleryStyle>(
+    normalizeGalleryStyle(initialStyle ?? DEFAULT_GALLERY_STYLE),
+  );
+  const [sizeValue, setSizeValue] = useState<string>(() =>
+    String(normalizeGallerySize(initialSize ?? DEFAULT_GALLERY_SIZE)),
   );
   const [isUploading, setIsUploading] = useState(false);
   const images = useMemo(
@@ -120,7 +144,7 @@ export default function InsertGalleryDialog({
       return;
     }
 
-    onSubmit(images);
+    onSubmit({images, style, size: normalizeGallerySize(sizeValue)});
     onClose();
   };
 
@@ -251,6 +275,26 @@ export default function InsertGalleryDialog({
           {uploadedImages.length === 1 ? '' : 's'} added.
         </p>
       )}
+      <div style={{marginTop: 12}}>
+        <Select
+          label="Gallery style"
+          value={style}
+          onChange={(event) =>
+            setStyle(normalizeGalleryStyle(event.target.value))
+          }>
+          <option value={GALLERY_STYLES.DEFAULT}>Default</option>
+          <option value={GALLERY_STYLES.STRIP}>Horizontal strip</option>
+          <option value={GALLERY_STYLES.SLIDESHOW}>Single image slideshow</option>
+        </Select>
+      </div>
+      <TextInput
+        label="Gallery width (%)"
+        type="number"
+        value={sizeValue}
+        onChange={setSizeValue}
+        placeholder="100"
+        data-test-id="gallery-size-input"
+      />
       <textarea
         value={value}
         onChange={(event) => setValue(event.target.value)}

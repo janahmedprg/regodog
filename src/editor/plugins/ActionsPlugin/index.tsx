@@ -35,6 +35,7 @@ interface SaveArticleFormProps {
   initialTags?: string[];
   initialPinned?: boolean;
   initialPinnedOrder?: number;
+  initialTagPinnedOrders?: Record<string, number>;
   initialThumbnailUrl?: string | null;
   initialThumbnailAltText?: string;
   initialThumbnailPositionX?: number;
@@ -42,6 +43,38 @@ interface SaveArticleFormProps {
   initialNewsFeedPositionX?: number;
   initialNewsFeedPositionY?: number;
   onBeforeNavigate?: () => void;
+}
+
+function sanitizeIntegerInput(value: string): string {
+  return value
+    .replace(/[^-0-9]/g, "")
+    .replace(/(?!^)-/g, "")
+    .replace(/^(-)?0+(?=\d)/, "$1");
+}
+
+function parseOptionalInteger(value: string): number | undefined {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return undefined;
+  }
+
+  const parsed = Number.parseInt(trimmed, 10);
+  return Number.isFinite(parsed) ? parsed : undefined;
+}
+
+function buildTagPinnedOrderInputs(
+  selectedTags: string[],
+  initialTagPinnedOrders: Record<string, number>,
+): Record<string, string> {
+  return Object.fromEntries(
+    selectedTags.map((tag) => {
+      const order = initialTagPinnedOrders[tag];
+      return [
+        tag,
+        typeof order === "number" && Number.isFinite(order) ? String(order) : "",
+      ];
+    }),
+  );
 }
 
 function clampPercent(value: number): number {
@@ -58,6 +91,7 @@ function SaveArticleForm({
   initialTags = [],
   initialPinned = false,
   initialPinnedOrder,
+  initialTagPinnedOrders = {},
   initialThumbnailUrl = null,
   initialThumbnailAltText = "",
   initialThumbnailPositionX = 50,
@@ -73,9 +107,12 @@ function SaveArticleForm({
     initialPinned &&
     typeof initialPinnedOrder === "number" &&
     Number.isFinite(initialPinnedOrder)
-      ? String(Math.max(0, Math.floor(initialPinnedOrder)))
+      ? String(Math.trunc(initialPinnedOrder))
       : "",
   );
+  const [tagPinnedOrderInputs, setTagPinnedOrderInputs] = useState<
+    Record<string, string>
+  >(() => buildTagPinnedOrderInputs(initialTags, initialTagPinnedOrders));
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(
     initialThumbnailUrl,
@@ -104,19 +141,25 @@ function SaveArticleForm({
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
-  useEffect(() => {
-    if (!isPinned) {
-      setPinnedOrderInput("");
-      return;
-    }
-  }, [isPinned]);
-
   const availableTags = Object.values(HeaderTags).map((tag: string) => tag);
 
   const handleTagChange = (tag: string) => {
-    setSelectedTags((prev) =>
-      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag],
-    );
+    setSelectedTags((prev) => {
+      if (prev.includes(tag)) {
+        setTagPinnedOrderInputs((current) => {
+          const next = { ...current };
+          delete next[tag];
+          return next;
+        });
+        return prev.filter((t) => t !== tag);
+      }
+
+      setTagPinnedOrderInputs((current) => ({
+        ...current,
+        [tag]: current[tag] ?? "",
+      }));
+      return [...prev, tag];
+    });
   };
 
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -154,13 +197,19 @@ function SaveArticleForm({
       const nextPinnedOrderValue =
         pinnedOrderInput.trim() === ""
           ? 0
-          : Math.max(0, Math.floor(Number.parseInt(pinnedOrderInput, 10) || 0));
+          : Number.parseInt(pinnedOrderInput, 10) || 0;
+      const nextTagPinnedOrders = Object.fromEntries(
+        selectedTags
+          .map((tag) => [tag, parseOptionalInteger(tagPinnedOrderInputs[tag] ?? "")] as const)
+          .filter((entry): entry is [string, number] => entry[1] !== undefined),
+      );
 
       const options: SaveEditorToFirebaseOptions = {
         title: title.trim(),
         tags: selectedTags,
         pinned: isPinned,
         pinnedOrder: nextPinnedOrderValue,
+        tagPinnedOrders: nextTagPinnedOrders,
         thumbnailImage: selectedImage,
         thumbnailAltText: thumbnailAltText.trim(),
         thumbnailPositionX,
@@ -383,7 +432,13 @@ function SaveArticleForm({
             id="article-pinned"
             type="checkbox"
             checked={isPinned}
-            onChange={(event) => setIsPinned(event.target.checked)}
+            onChange={(event) => {
+              const nextPinned = event.target.checked;
+              setIsPinned(nextPinned);
+              if (!nextPinned) {
+                setPinnedOrderInput("");
+              }
+            }}
             disabled={isSaving}
           />
           Pin this article to homepage
@@ -399,14 +454,9 @@ function SaveArticleForm({
         <input
           id="article-pinned-order"
           type="text"
-          inputMode="numeric"
+          inputMode="decimal" // Better support for symbols like '-'
           value={pinnedOrderInput}
-          onChange={(event) => {
-            const nextValue = event.target.value
-              .replace(/[^0-9]/g, "")
-              .replace(/^0+(?=\d)/, "");
-            setPinnedOrderInput(nextValue);
-          }}
+          onChange={(event) => setPinnedOrderInput(sanitizeIntegerInput(event.target.value))}
           disabled={isSaving}
           style={{
             width: "120px",
@@ -417,6 +467,53 @@ function SaveArticleForm({
           }}
         />
       </div>
+      {selectedTags.length > 0 && (
+        <div style={{ marginBottom: "15px" }}>
+          <div style={{ marginBottom: "5px", fontWeight: 600 }}>
+            Tag page order
+          </div>
+          <div style={{ fontSize: "13px", color: "#555", marginBottom: "10px" }}>
+            Set an optional order for each selected tag. Lower numbers appear first.
+            Blank tags fall back to created date.
+          </div>
+          {selectedTags.map((tag) => (
+            <div
+              key={tag}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "12px",
+                marginBottom: "8px",
+              }}
+            >
+              <label style={{ minWidth: "140px" }} htmlFor={`tag-order-${tag}`}>
+                {tag}
+              </label>
+              <input
+                id={`tag-order-${tag}`}
+                type="text"
+                inputMode="decimal"
+                value={tagPinnedOrderInputs[tag] ?? ""}
+                onChange={(event) =>
+                  setTagPinnedOrderInputs((current) => ({
+                    ...current,
+                    [tag]: sanitizeIntegerInput(event.target.value),
+                  }))
+                }
+                disabled={isSaving}
+                placeholder="Created date"
+                style={{
+                  width: "140px",
+                  padding: "8px",
+                  fontSize: "14px",
+                  border: "1px solid #ccc",
+                  borderRadius: "4px",
+                }}
+              />
+            </div>
+          ))}
+        </div>
+      )}
 
       <div style={{ marginBottom: "15px" }}>
         <label
@@ -726,6 +823,7 @@ export default function ActionsPlugin(): JSX.Element {
     articleTags,
     articlePinned,
     articlePinnedOrder,
+    articleTagPinnedOrders,
     articleThumbnailUrl,
     articleThumbnailAltText,
     articleThumbnailPositionX,
@@ -751,6 +849,7 @@ export default function ActionsPlugin(): JSX.Element {
           initialTags={articleTags}
           initialPinned={articlePinned}
           initialPinnedOrder={articlePinnedOrder}
+          initialTagPinnedOrders={articleTagPinnedOrders}
           initialThumbnailUrl={articleThumbnailUrl}
           initialThumbnailAltText={articleThumbnailAltText}
           initialThumbnailPositionX={articleThumbnailPositionX}
@@ -770,6 +869,7 @@ export default function ActionsPlugin(): JSX.Element {
     articleTags,
     articlePinned,
     articlePinnedOrder,
+    articleTagPinnedOrders,
     articleThumbnailUrl,
     articleThumbnailAltText,
     articleThumbnailPositionX,

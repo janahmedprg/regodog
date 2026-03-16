@@ -6,7 +6,7 @@ import NewsItem, { NewsItemProps } from "./NewsItem.js";
 import { FaMapMarkerAlt } from "react-icons/fa";
 import "../styles/styles.css";
 import "../styles/tags.css";
-import { Link, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 
 const NEWS_ITEMS_PER_PAGE = 9;
 const UPCOMING_EVENTS_LIMIT = 5;
@@ -200,9 +200,7 @@ function formatCalendarEventDate(event: CalendarEvent): string {
       event.endDate.getTime() - 24 * 60 * 60 * 1000,
     );
 
-    if (
-      inclusiveEndDate.toDateString() === event.startDate.toDateString()
-    ) {
+    if (inclusiveEndDate.toDateString() === event.startDate.toDateString()) {
       return `${startLabel} (All day)`;
     }
 
@@ -213,7 +211,8 @@ function formatCalendarEventDate(event: CalendarEvent): string {
     return dateTimeFormatter.format(event.startDate);
   }
 
-  const isSameDay = event.startDate.toDateString() === event.endDate.toDateString();
+  const isSameDay =
+    event.startDate.toDateString() === event.endDate.toDateString();
   if (isSameDay) {
     return `${dateFormatter.format(event.startDate)} ${timeFormatter.format(
       event.startDate,
@@ -244,7 +243,10 @@ function getAttachmentType(url: string): AttachmentType {
     return "google-drive";
   }
 
-  if (normalized.includes("youtube.com/watch") || normalized.includes("youtu.be/")) {
+  if (
+    normalized.includes("youtube.com/watch") ||
+    normalized.includes("youtu.be/")
+  ) {
     return "youtube";
   }
 
@@ -468,6 +470,15 @@ interface NewsItemData extends Omit<NewsItemProps, "link"> {
   lastUpdated?: unknown;
   pinned?: boolean;
   pinnedOrder?: number;
+  tagPinnedOrders?: Record<string, number>;
+}
+
+function getTagPinnedOrderValue(
+  item: { tagPinnedOrders?: Record<string, number> },
+  tag: string,
+): number | undefined {
+  const value = item.tagPinnedOrders?.[tag];
+  return typeof value === "number" && Number.isFinite(value) ? value : undefined;
 }
 
 const EditorApp = React.lazy(() => import("../editor/App.js"));
@@ -479,14 +490,14 @@ const NewsFeed: React.FC<NewsFeedProps> = ({ tag, initialNewsItems }) => {
   );
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [isCreating, setIsCreating] = useState<boolean>(false);
-  const [newTitle, setNewTitle] = useState<string>("");
+  const [, setNewTitle] = useState<string>("");
   const [searchParams, setSearchParams] = useSearchParams();
   const currentPage = parsePageFromSearchParams(searchParams);
   const isHome = !tag;
   const shouldPaginate = Boolean(tag);
-  const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  const [selectedImage, setSelectedImage] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [, setSelectedTags] = useState<string[]>([]);
+  const [, setSelectedImage] = useState<File | null>(null);
+  const [, setImagePreview] = useState<string | null>(null);
   const pinnedStripRef = React.useRef<HTMLDivElement | null>(null);
   const [canScrollPinnedLeft, setCanScrollPinnedLeft] =
     useState<boolean>(false);
@@ -529,19 +540,32 @@ const NewsFeed: React.FC<NewsFeedProps> = ({ tag, initialNewsItems }) => {
 
   const sortedItems = React.useMemo(() => {
     return [...newsItems].sort((a, b) => {
+      if (tag) {
+        const aOrder = getTagPinnedOrderValue(a, tag);
+        const bOrder = getTagPinnedOrderValue(b, tag);
+
+        if (aOrder !== undefined || bOrder !== undefined) {
+          if (aOrder === undefined) {
+            return 1;
+          }
+          if (bOrder === undefined) {
+            return -1;
+          }
+          if (aOrder !== bOrder) {
+            return aOrder - bOrder;
+          }
+        }
+      }
+
       const aTime = getLatestTimestamp(a);
       const bTime = getLatestTimestamp(b);
       if (aTime !== bTime) {
         return bTime - aTime;
       }
-      const aCreated = toEpochMillis(a.createdAt);
-      const bCreated = toEpochMillis(b.createdAt);
-      if (aCreated !== bCreated) {
-        return bCreated - aCreated;
-      }
+
       return String(b.id).localeCompare(String(a.id));
     });
-  }, [newsItems]);
+  }, [newsItems, tag]);
 
   const pinnedItems = React.useMemo(
     () =>
@@ -560,8 +584,8 @@ const NewsFeed: React.FC<NewsFeedProps> = ({ tag, initialNewsItems }) => {
             return aOrder - bOrder;
           }
 
-          const aTime = toEpochMillis(a.createdAt);
-          const bTime = toEpochMillis(b.createdAt);
+          const aTime = getLatestTimestamp(a);
+          const bTime = getLatestTimestamp(b);
           return bTime - aTime;
         }),
     [sortedItems],
@@ -642,7 +666,7 @@ const NewsFeed: React.FC<NewsFeedProps> = ({ tag, initialNewsItems }) => {
 
     pages.push(totalPages);
     return pages;
-  }, [safeCurrentPage, totalPages]);
+  }, [safeCurrentPage, shouldPaginate, totalPages]);
 
   useEffect(() => {
     const strip = pinnedStripRef.current;
@@ -991,7 +1015,7 @@ const NewsFeed: React.FC<NewsFeedProps> = ({ tag, initialNewsItems }) => {
                                         src={youtubeEmbedUrl}
                                         title={attachmentLabel}
                                         className="home-event-attachment-embed home-event-attachment-embed--video"
-                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                        allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                                         allowFullScreen
                                       />
                                     )}
@@ -1001,7 +1025,6 @@ const NewsFeed: React.FC<NewsFeedProps> = ({ tag, initialNewsItems }) => {
                                         src={driveEmbedUrl}
                                         title={attachmentLabel}
                                         className="home-event-attachment-embed home-event-attachment-embed--drive"
-                                        allow="autoplay"
                                       />
                                     )}
                                   {!hasInlineEmbed && (

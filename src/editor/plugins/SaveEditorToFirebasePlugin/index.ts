@@ -36,8 +36,6 @@ type SerializedEditorPayload =
       [key: string]: SerializedEditorPayload | SerializedEditorPayload[];
     };
 
-type SerializableObject = Record<string, SerializedEditorPayload>;
-
 function isBase64ImageSrc(src: string): boolean {
   return /^data:image\/[a-zA-Z0-9.+-]+;base64,/.test(src);
 }
@@ -225,6 +223,7 @@ export interface SaveEditorToFirebaseOptions {
   existingThumbnailUrl?: string | null; // Existing thumbnail URL to preserve if no new image is uploaded
   pinned?: boolean;
   pinnedOrder?: number;
+  tagPinnedOrders?: Record<string, number>;
   articleId?: string; // If provided, will update existing article instead of creating new one
   onSuccess?: (articleId: string) => void;
   onError?: (error: Error) => void;
@@ -246,6 +245,7 @@ export async function saveEditorToFirebase(
     existingThumbnailUrl,
     pinned = false,
     pinnedOrder = 0,
+    tagPinnedOrders = {},
     articleId,
     onSuccess,
     onError,
@@ -408,6 +408,12 @@ export async function saveEditorToFirebase(
       thumbnailUrl = newUrl;
     }
 
+    const normalizedTagPinnedOrders = Object.fromEntries(
+      Object.entries(tagPinnedOrders).filter(
+        ([, value]) => typeof value === "number" && Number.isFinite(value),
+      ),
+    );
+
     const articleData: {
       title: string;
       editorStateUrl: string;
@@ -422,6 +428,7 @@ export async function saveEditorToFirebase(
       thumbnailUrl?: string | null;
       pinned: boolean;
       pinnedOrder?: number;
+      tagPinnedOrders: Record<string, number>;
       lastUpdated: Date;
       author?: string;
       createdAt?: Date;
@@ -433,8 +440,9 @@ export async function saveEditorToFirebase(
       embeddedImageUrls: currentEmbeddedImageUrls,
       pinned,
       pinnedOrder: Number.isFinite(pinnedOrder)
-        ? Math.max(0, Math.floor(pinnedOrder))
+        ? Math.trunc(pinnedOrder)
         : 0,
+      tagPinnedOrders: normalizedTagPinnedOrders,
       lastUpdated: new Date(),
       author: auth.currentUser?.uid || "anonymous",
     };

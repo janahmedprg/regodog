@@ -1,5 +1,12 @@
 import React, { useEffect, useRef } from "react";
 import { createRoot, Root } from "react-dom/client";
+import {
+  DEFAULT_GALLERY_SIZE,
+  DEFAULT_GALLERY_STYLE,
+  normalizeGallerySize,
+  normalizeGalleryStyle,
+  type GalleryStyle,
+} from "../editor/nodes/GalleryNode";
 
 import ArticleGallery from "./ArticleGallery";
 
@@ -15,6 +22,8 @@ interface ArticleHtmlRendererProps {
 function getGalleryPayload(galleryElement: HTMLElement): {
   images: Array<{ src: string; altText: string }>;
   activeIndex: number;
+  style: GalleryStyle;
+  size: number;
 } | null {
   const rawPayload = galleryElement.getAttribute("data-lexical-gallery");
   if (rawPayload) {
@@ -22,6 +31,8 @@ function getGalleryPayload(galleryElement: HTMLElement): {
       const parsed = JSON.parse(rawPayload) as {
         images?: Array<{ src?: string; altText?: string }>;
         activeIndex?: number;
+        style?: GalleryStyle;
+        size?: number;
       };
       if (Array.isArray(parsed.images)) {
         const normalized = parsed.images
@@ -44,7 +55,16 @@ function getGalleryPayload(galleryElement: HTMLElement): {
             ? Math.max(0, Math.min(Math.floor(parsed.activeIndex), maxIndex))
             : 0;
 
-        return { images: normalized, activeIndex: safeActiveIndex };
+        return {
+          images: normalized,
+          activeIndex: safeActiveIndex,
+          style: normalizeGalleryStyle(
+            parsed.style ?? galleryElement.getAttribute("data-gallery-style"),
+          ),
+          size: normalizeGallerySize(
+            parsed.size ?? galleryElement.getAttribute("data-gallery-size"),
+          ),
+        };
       }
     } catch {
       return null;
@@ -61,7 +81,12 @@ function getGalleryPayload(galleryElement: HTMLElement): {
     .filter((image) => image.src);
 
   if (fallbackImages.length > 0) {
-    return { images: fallbackImages, activeIndex: 0 };
+    return {
+      images: fallbackImages,
+      activeIndex: 0,
+      style: DEFAULT_GALLERY_STYLE,
+      size: DEFAULT_GALLERY_SIZE,
+    };
   }
 
   const fallbackMain = galleryElement.querySelector<HTMLImageElement>("img");
@@ -72,6 +97,8 @@ function getGalleryPayload(galleryElement: HTMLElement): {
   return {
     images: [{ src: fallbackMain.src, altText: fallbackMain.alt || "" }],
     activeIndex: 0,
+    style: DEFAULT_GALLERY_STYLE,
+    size: DEFAULT_GALLERY_SIZE,
   };
 }
 
@@ -112,12 +139,16 @@ const ArticleHtmlRenderer: React.FC<ArticleHtmlRendererProps> = ({ htmlContent }
       galleryElement.classList.add("GalleryNode__container");
       galleryElement.setAttribute("aria-label", "Image gallery");
       galleryElement.setAttribute("data-active-index", String(activeIndex));
+      galleryElement.setAttribute("data-gallery-style", payload.style);
+      galleryElement.setAttribute("data-gallery-size", String(payload.size));
 
       const root = createRoot(galleryElement);
       root.render(
         <ArticleGallery
           images={payload.images as GalleryImage[]}
           initialActiveIndex={activeIndex}
+          style={payload.style}
+          size={payload.size}
         />,
       );
       galleryRoots.push(root);

@@ -6,6 +6,7 @@ export interface SSRNewsItem {
   previewText?: string;
   pinned?: boolean;
   pinnedOrder?: number;
+  tagPinnedOrders?: Record<string, number>;
   createdAt?: number | null;
   lastUpdated?: number | null;
   thumbnailUrl?: string;
@@ -22,6 +23,7 @@ export interface SSRArticle {
   tags?: string[];
   pinned?: boolean;
   pinnedOrder?: number;
+  tagPinnedOrders?: Record<string, number>;
   thumbnailUrl?: string;
   thumbnailAltText?: string;
   thumbnailPositionX?: number;

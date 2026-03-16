@@ -22,14 +22,19 @@ import {
 import {useEffect} from 'react';
 
 import {
+  DEFAULT_GALLERY_SIZE,
+  GalleryStyle,
   GalleryImage,
   GalleryNode,
   $createGalleryNode,
+  DEFAULT_GALLERY_STYLE,
 } from '../../nodes/GalleryNode';
 import InsertGalleryDialogBase from '../../ui/GalleryInsertDialog';
 
 export type InsertGalleryPayload = Readonly<{
   images: readonly GalleryImage[];
+  style: GalleryStyle;
+  size: number;
 }>;
 
 export const INSERT_GALLERY_COMMAND: LexicalCommand<InsertGalleryPayload> =
@@ -47,7 +52,12 @@ export default function GalleryPlugin(): JSX.Element | null {
       editor.registerCommand<InsertGalleryPayload>(
         INSERT_GALLERY_COMMAND,
         (payload) => {
-          const galleryNode = $createGalleryNode(payload.images);
+          const galleryNode = $createGalleryNode(
+            payload.images,
+            0,
+            payload.style,
+            payload.size,
+          );
           $insertNodes([galleryNode]);
           if ($isRootOrShadowRoot(galleryNode.getParentOrThrow())) {
             $wrapNodeInElement(galleryNode, $createParagraphNode).selectEnd();
@@ -68,13 +78,21 @@ export function InsertGalleryDialog({
   onClose,
   onSubmit,
   initialImages,
+  initialStyle,
+  initialSize,
   submitButtonText,
   title,
 }: {
   activeEditor: LexicalEditor;
   onClose: () => void;
-  onSubmit?: (images: GalleryImage[]) => void;
+  onSubmit?: (payload: {
+    images: GalleryImage[];
+    style: GalleryStyle;
+    size: number;
+  }) => void;
   initialImages?: readonly GalleryImage[];
+  initialStyle?: GalleryStyle;
+  initialSize?: number;
   submitButtonText?: string;
   title?: string;
 }): JSX.Element {
@@ -84,11 +102,17 @@ export function InsertGalleryDialog({
       onClose={onClose}
       onSubmit={
         onSubmit ??
-        ((images: GalleryImage[]) => {
-          activeEditor.dispatchCommand(INSERT_GALLERY_COMMAND, {images});
+        ((payload: {
+          images: GalleryImage[];
+          style: GalleryStyle;
+          size: number;
+        }) => {
+          activeEditor.dispatchCommand(INSERT_GALLERY_COMMAND, payload);
         })
       }
       initialImages={initialImages}
+      initialStyle={initialStyle ?? DEFAULT_GALLERY_STYLE}
+      initialSize={initialSize ?? DEFAULT_GALLERY_SIZE}
       submitButtonText={submitButtonText}
       title={title}
     />

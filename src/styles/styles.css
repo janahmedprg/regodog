@@ -895,6 +895,17 @@ body {
   overflow: hidden;
 }
 
+.article-html-content .GalleryNode__slideshow {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+}
+
+.article-html-content .GalleryNode__slideshowArrow {
+  align-self: center;
+}
+
 .article-html-content .GalleryNode__mainImage {
   width: 100%;
   height: min(680px, 72vw);
@@ -902,6 +913,37 @@ body {
   border-radius: 12px;
   display: block;
   background: none;
+}
+
+.article-html-content .GalleryNode__carousel {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+}
+
+.article-html-content .GalleryNode__carouselViewport {
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+}
+
+.article-html-content .GalleryNode__carouselTrack {
+  display: flex;
+  gap: 12px;
+  align-items: stretch;
+  scroll-snap-type: x proximity;
+}
+
+.article-html-content .GalleryNode__carouselImage {
+  width: clamp(220px, 32vw, 320px);
+  height: clamp(160px, 22vw, 220px);
+  object-fit: contain;
+  border-radius: 12px;
+  background: none;
+  flex: 0 0 auto;
+  scroll-snap-align: start;
 }
 
 .article-html-content .GalleryNode__thumbnails {
@@ -1022,6 +1064,11 @@ body {
     gap: 8px;
   }
 
+  .article-html-content .GalleryNode__slideshow,
+  .article-html-content .GalleryNode__carousel {
+    gap: 8px;
+  }
+
   .article-html-content .GalleryNode__thumbStrip {
     max-width: 100%;
     gap: 8px;
@@ -1039,6 +1086,11 @@ body {
 
   .article-html-content .GalleryNode__mainImage {
     height: min(460px, 80vw);
+  }
+
+  .article-html-content .GalleryNode__carouselImage {
+    width: 72vw;
+    height: 44vw;
   }
 }
 

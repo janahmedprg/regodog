@@ -155,6 +155,48 @@
   overflow: hidden;
 }
 
+.GalleryNode__slideshow {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+}
+
+.GalleryNode__slideshowArrow {
+  align-self: center;
+}
+
+.GalleryNode__carousel {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+}
+
+.GalleryNode__carouselViewport {
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: #8ea0af transparent;
+}
+
+.GalleryNode__carouselTrack {
+  display: flex;
+  gap: 12px;
+  align-items: stretch;
+  scroll-snap-type: x proximity;
+}
+
+.GalleryNode__carouselImage {
+  width: clamp(220px, 32vw, 320px);
+  height: clamp(160px, 22vw, 220px);
+  object-fit: contain;
+  border-radius: 12px;
+  background: none;
+  flex: 0 0 auto;
+  scroll-snap-align: start;
+}
+
 .GalleryNode__editActions {
   margin-top: 10px;
   display: flex;
@@ -189,6 +231,11 @@
     gap: 8px;
   }
 
+  .GalleryNode__slideshow,
+  .GalleryNode__carousel {
+    gap: 8px;
+  }
+
   .GalleryNode__thumbStrip {
     max-width: 100%;
     gap: 8px;
@@ -206,6 +253,11 @@
 
   .GalleryNode__mainImage {
     height: min(460px, 80vw);
+  }
+
+  .GalleryNode__carouselImage {
+    width: 72vw;
+    height: 44vw;
   }
 
   .GalleryNode__editButton {
