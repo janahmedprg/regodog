@@ -34,6 +34,15 @@ export const GALLERY_STYLES = {
   SLIDESHOW: 'slideshow',
 } as const;
 
+export const MIN_GALLERY_SIZE = 25;
+export const MAX_GALLERY_SIZE = 160;
+export const DEFAULT_GALLERY_STRIP_GAP = 12;
+export const MIN_GALLERY_STRIP_GAP = 0;
+export const MAX_GALLERY_STRIP_GAP = 48;
+export const DEFAULT_GALLERY_STRIP_HEIGHT = 220;
+export const MIN_GALLERY_STRIP_HEIGHT = 120;
+export const MAX_GALLERY_STRIP_HEIGHT = 420;
+
 export type GalleryStyle =
   (typeof GALLERY_STYLES)[keyof typeof GALLERY_STYLES];
 
@@ -45,6 +54,8 @@ export type GalleryPayload = {
   initialActiveIndex?: number;
   style?: GalleryStyle;
   size?: number;
+  stripGap?: number;
+  stripHeight?: number;
 };
 
 export type SerializedGalleryNode = Spread<
@@ -53,6 +64,8 @@ export type SerializedGalleryNode = Spread<
     activeIndex: number;
     style?: GalleryStyle;
     size?: number;
+    stripGap?: number;
+    stripHeight?: number;
   },
   SerializedLexicalNode
 >;
@@ -104,7 +117,49 @@ export function normalizeGallerySize(size: unknown): number {
     return DEFAULT_GALLERY_SIZE;
   }
 
-  return Math.max(25, Math.min(100, Math.round(parsed)));
+  return Math.max(MIN_GALLERY_SIZE, Math.min(MAX_GALLERY_SIZE, Math.round(parsed)));
+}
+
+export function getGalleryScale(size: unknown): number {
+  const normalizedSize = normalizeGallerySize(size);
+
+  return Math.max(0.6, Math.min(normalizedSize / 100, 1.6));
+}
+
+export function normalizeGalleryStripGap(gap: unknown): number {
+  const parsed =
+    typeof gap === 'number'
+      ? gap
+      : typeof gap === 'string'
+        ? Number.parseFloat(gap)
+        : NaN;
+
+  if (!Number.isFinite(parsed)) {
+    return DEFAULT_GALLERY_STRIP_GAP;
+  }
+
+  return Math.max(
+    MIN_GALLERY_STRIP_GAP,
+    Math.min(MAX_GALLERY_STRIP_GAP, Math.round(parsed)),
+  );
+}
+
+export function normalizeGalleryStripHeight(height: unknown): number {
+  const parsed =
+    typeof height === 'number'
+      ? height
+      : typeof height === 'string'
+        ? Number.parseFloat(height)
+        : NaN;
+
+  if (!Number.isFinite(parsed)) {
+    return DEFAULT_GALLERY_STRIP_HEIGHT;
+  }
+
+  return Math.max(
+    MIN_GALLERY_STRIP_HEIGHT,
+    Math.min(MAX_GALLERY_STRIP_HEIGHT, Math.round(parsed)),
+  );
 }
 
 function normalizeActiveIndex(index: number | undefined, count: number): number {
@@ -134,6 +189,8 @@ function $convertGalleryElement(domNode: HTMLDivElement): DOMConversionOutput | 
       activeIndex?: number;
       style?: GalleryStyle;
       size?: number;
+      stripGap?: number;
+      stripHeight?: number;
     };
     if (Array.isArray(payload.images)) {
       return {
@@ -145,6 +202,13 @@ function $convertGalleryElement(domNode: HTMLDivElement): DOMConversionOutput | 
           ),
           normalizeGallerySize(
             payload.size ?? domNode.getAttribute('data-gallery-size'),
+          ),
+          normalizeGalleryStripGap(
+            payload.stripGap ?? domNode.getAttribute('data-gallery-strip-gap'),
+          ),
+          normalizeGalleryStripHeight(
+            payload.stripHeight ??
+              domNode.getAttribute('data-gallery-strip-height'),
           ),
         ),
       };
@@ -161,6 +225,8 @@ export class GalleryNode extends DecoratorNode<JSX.Element> {
   __activeIndex: number;
   __style: GalleryStyle;
   __size: number;
+  __stripGap: number;
+  __stripHeight: number;
 
   static getType(): string {
     return 'gallery';
@@ -172,6 +238,8 @@ export class GalleryNode extends DecoratorNode<JSX.Element> {
       node.__activeIndex,
       node.__style,
       node.__size,
+      node.__stripGap,
+      node.__stripHeight,
       node.__key,
     );
   }
@@ -182,6 +250,8 @@ export class GalleryNode extends DecoratorNode<JSX.Element> {
       serializedNode.activeIndex,
       serializedNode.style,
       serializedNode.size,
+      serializedNode.stripGap,
+      serializedNode.stripHeight,
     );
   }
 
@@ -208,6 +278,8 @@ export class GalleryNode extends DecoratorNode<JSX.Element> {
     activeIndex = 0,
     style: GalleryStyle = DEFAULT_GALLERY_STYLE,
     size = DEFAULT_GALLERY_SIZE,
+    stripGap = DEFAULT_GALLERY_STRIP_GAP,
+    stripHeight = DEFAULT_GALLERY_STRIP_HEIGHT,
     key?: NodeKey,
   ) {
     super(key);
@@ -215,6 +287,8 @@ export class GalleryNode extends DecoratorNode<JSX.Element> {
     this.__activeIndex = normalizeActiveIndex(activeIndex, this.__images.length);
     this.__style = normalizeGalleryStyle(style);
     this.__size = normalizeGallerySize(size);
+    this.__stripGap = normalizeGalleryStripGap(stripGap);
+    this.__stripHeight = normalizeGalleryStripHeight(stripHeight);
   }
 
   exportJSON(): SerializedGalleryNode {
@@ -224,6 +298,8 @@ export class GalleryNode extends DecoratorNode<JSX.Element> {
       activeIndex: this.__activeIndex,
       style: this.__style,
       size: this.__size,
+      stripGap: this.__stripGap,
+      stripHeight: this.__stripHeight,
     };
   }
 
@@ -240,17 +316,34 @@ export class GalleryNode extends DecoratorNode<JSX.Element> {
         activeIndex: this.__activeIndex,
         style: this.__style,
         size: this.__size,
+        stripGap: this.__stripGap,
+        stripHeight: this.__stripHeight,
       }),
     );
     element.className = 'GalleryNode__container';
+    if (this.__style === GALLERY_STYLES.STRIP) {
+      element.classList.add('GalleryNode__container--strip');
+    }
+    if (this.__style === GALLERY_STYLES.SLIDESHOW) {
+      element.classList.add('GalleryNode__container--slideshow');
+    }
     element.setAttribute('aria-label', 'Image gallery');
     element.setAttribute('data-active-index', String(activeIndex));
     element.setAttribute('data-gallery-style', this.__style);
     element.setAttribute('data-gallery-size', String(this.__size));
-    element.style.width = `${this.__size}%`;
-    element.style.maxWidth = '100%';
-    element.style.marginLeft = 'auto';
-    element.style.marginRight = 'auto';
+    element.setAttribute('data-gallery-strip-gap', String(this.__stripGap));
+    element.setAttribute('data-gallery-strip-height', String(this.__stripHeight));
+    element.style.setProperty('--gallery-scale', String(getGalleryScale(this.__size)));
+    element.style.setProperty('--gallery-strip-gap', `${this.__stripGap}px`);
+    element.style.setProperty(
+      '--gallery-strip-image-height',
+      `${this.__stripHeight}px`,
+    );
+    element.style.width = `min(${this.__size}%, calc(100vw - 32px))`;
+    element.style.maxWidth = 'none';
+    element.style.position = 'relative';
+    element.style.left = '50%';
+    element.style.transform = 'translateX(-50%)';
 
     if (this.__images.length > 0) {
       if (this.__style === GALLERY_STYLES.STRIP) {
@@ -261,14 +354,20 @@ export class GalleryNode extends DecoratorNode<JSX.Element> {
         leftArrow.type = 'button';
         leftArrow.className = 'GalleryNode__arrow';
         leftArrow.setAttribute('data-gallery-nav', 'left');
+        leftArrow.setAttribute('data-direction', 'left');
         leftArrow.setAttribute('aria-label', 'Scroll gallery left');
-        leftArrow.textContent = '←';
+        leftArrow.textContent = '‹';
         carousel.append(leftArrow);
 
         const viewport = document.createElement('div');
         viewport.className = 'GalleryNode__carouselViewport';
         const track = document.createElement('div');
         track.className = 'GalleryNode__carouselTrack';
+        track.style.setProperty('--gallery-strip-gap', `${this.__stripGap}px`);
+        track.style.setProperty(
+          '--gallery-strip-image-height',
+          `${this.__stripHeight}px`,
+        );
         this.__images.forEach((galleryImage, index) => {
           const img = document.createElement('img');
           img.src = galleryImage.src;
@@ -284,23 +383,24 @@ export class GalleryNode extends DecoratorNode<JSX.Element> {
         rightArrow.type = 'button';
         rightArrow.className = 'GalleryNode__arrow';
         rightArrow.setAttribute('data-gallery-nav', 'right');
+        rightArrow.setAttribute('data-direction', 'right');
         rightArrow.setAttribute('aria-label', 'Scroll gallery right');
-        rightArrow.textContent = '→';
+        rightArrow.textContent = '›';
         carousel.append(rightArrow);
 
         element.append(carousel);
       } else {
-        const mainWrap = document.createElement('div');
-        mainWrap.className = 'GalleryNode__main';
-        const image = this.__images[activeIndex];
-        const img = document.createElement('img');
-        img.src = image.src;
-        img.alt = image.altText || `Gallery image ${activeIndex + 1}`;
-        img.className = 'GalleryNode__mainImage';
-        img.loading = 'lazy';
-        mainWrap.append(img);
-
         if (this.__style === GALLERY_STYLES.SLIDESHOW) {
+          const mainWrap = document.createElement('div');
+          mainWrap.className = 'GalleryNode__main';
+          const image = this.__images[activeIndex];
+          const img = document.createElement('img');
+          img.src = image.src;
+          img.alt = image.altText || `Gallery image ${activeIndex + 1}`;
+          img.className = 'GalleryNode__mainImage';
+          img.loading = 'lazy';
+          mainWrap.append(img);
+
           const slideshow = document.createElement('div');
           slideshow.className = 'GalleryNode__slideshow';
 
@@ -308,8 +408,9 @@ export class GalleryNode extends DecoratorNode<JSX.Element> {
           leftArrow.type = 'button';
           leftArrow.className = 'GalleryNode__arrow GalleryNode__slideshowArrow';
           leftArrow.setAttribute('data-gallery-nav', 'left');
+          leftArrow.setAttribute('data-direction', 'left');
           leftArrow.setAttribute('aria-label', 'Show previous image');
-          leftArrow.textContent = '←';
+          leftArrow.textContent = '‹';
           slideshow.append(leftArrow);
           slideshow.append(mainWrap);
 
@@ -317,12 +418,47 @@ export class GalleryNode extends DecoratorNode<JSX.Element> {
           rightArrow.type = 'button';
           rightArrow.className = 'GalleryNode__arrow GalleryNode__slideshowArrow';
           rightArrow.setAttribute('data-gallery-nav', 'right');
+          rightArrow.setAttribute('data-direction', 'right');
           rightArrow.setAttribute('aria-label', 'Show next image');
-          rightArrow.textContent = '→';
+          rightArrow.textContent = '›';
           slideshow.append(rightArrow);
 
           element.append(slideshow);
+          const dots = document.createElement('div');
+          dots.className = 'GalleryNode__slideshowDots';
+          dots.setAttribute('aria-label', 'Slideshow position');
+          this.__images.forEach((galleryImage, index) => {
+            const dot = document.createElement('button');
+            dot.type = 'button';
+            dot.className = 'GalleryNode__slideshowDot';
+            if (index === activeIndex) {
+              dot.classList.add('GalleryNode__slideshowDotActive');
+              dot.setAttribute('aria-current', 'true');
+            }
+            dot.setAttribute('aria-label', `Show image ${index + 1}`);
+            dot.setAttribute('data-gallery-thumb-index', String(index));
+            dot.setAttribute(
+              'data-gallery-thumb-src',
+              galleryImage.src,
+            );
+            dot.setAttribute(
+              'data-gallery-thumb-alt',
+              galleryImage.altText || `Gallery image ${index + 1}`,
+            );
+            dots.append(dot);
+          });
+          element.append(dots);
         } else {
+          const mainWrap = document.createElement('div');
+          mainWrap.className = 'GalleryNode__main';
+          const image = this.__images[activeIndex];
+          const img = document.createElement('img');
+          img.src = image.src;
+          img.alt = image.altText || `Gallery image ${activeIndex + 1}`;
+          img.className = 'GalleryNode__mainImage';
+          img.loading = 'lazy';
+          mainWrap.append(img);
+
           element.append(mainWrap);
 
           const thumbs = document.createElement('div');
@@ -332,8 +468,9 @@ export class GalleryNode extends DecoratorNode<JSX.Element> {
           leftArrow.type = 'button';
           leftArrow.className = 'GalleryNode__arrow';
           leftArrow.setAttribute('data-gallery-nav', 'left');
+          leftArrow.setAttribute('data-direction', 'left');
           leftArrow.setAttribute('aria-label', 'Scroll thumbnails left');
-          leftArrow.textContent = '←';
+          leftArrow.textContent = '‹';
           thumbs.append(leftArrow);
 
           const strip = document.createElement('div');
@@ -366,8 +503,9 @@ export class GalleryNode extends DecoratorNode<JSX.Element> {
           rightArrow.type = 'button';
           rightArrow.className = 'GalleryNode__arrow';
           rightArrow.setAttribute('data-gallery-nav', 'right');
+          rightArrow.setAttribute('data-direction', 'right');
           rightArrow.setAttribute('aria-label', 'Scroll thumbnails right');
-          rightArrow.textContent = '→';
+          rightArrow.textContent = '›';
           thumbs.append(rightArrow);
 
           element.append(thumbs);
@@ -409,6 +547,14 @@ export class GalleryNode extends DecoratorNode<JSX.Element> {
     return this.__size;
   }
 
+  getStripGap(): number {
+    return this.__stripGap;
+  }
+
+  getStripHeight(): number {
+    return this.__stripHeight;
+  }
+
   setActiveIndex(nextActiveIndex: number): void {
     const writable = this.getWritable();
     writable.__activeIndex = normalizeActiveIndex(
@@ -427,6 +573,16 @@ export class GalleryNode extends DecoratorNode<JSX.Element> {
     writable.__size = normalizeGallerySize(nextSize);
   }
 
+  setStripGap(nextStripGap: number): void {
+    const writable = this.getWritable();
+    writable.__stripGap = normalizeGalleryStripGap(nextStripGap);
+  }
+
+  setStripHeight(nextStripHeight: number): void {
+    const writable = this.getWritable();
+    writable.__stripHeight = normalizeGalleryStripHeight(nextStripHeight);
+  }
+
   decorate(): JSX.Element {
     return (
       <GalleryComponent
@@ -434,6 +590,8 @@ export class GalleryNode extends DecoratorNode<JSX.Element> {
         activeIndex={this.getActiveIndex()}
         style={this.getStyle()}
         size={this.getSize()}
+        stripGap={this.getStripGap()}
+        stripHeight={this.getStripHeight()}
         nodeKey={this.__key}
       />
     );
@@ -445,8 +603,17 @@ export function $createGalleryNode(
   initialActiveIndex?: number,
   style?: GalleryStyle,
   size?: number,
+  stripGap?: number,
+  stripHeight?: number,
 ): GalleryNode {
-  return new GalleryNode(images, initialActiveIndex, style, size);
+  return new GalleryNode(
+    images,
+    initialActiveIndex,
+    style,
+    size,
+    stripGap,
+    stripHeight,
+  );
 }
 
 export function $isGalleryNode(

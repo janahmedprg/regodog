@@ -6,7 +6,19 @@
  */
 
 .GalleryNode__container {
-  margin: 24px 0;
+  --gallery-scale: 1;
+  --gallery-gap: clamp(8px, calc(12px * var(--gallery-scale)), 20px);
+  --gallery-arrow-size: clamp(34px, calc(44px * var(--gallery-scale)), 60px);
+  --gallery-arrow-font-size: clamp(22px, calc(26px * var(--gallery-scale)), 34px);
+  --gallery-thumb-button-width: clamp(96px, calc(132px * var(--gallery-scale)), 188px);
+  --gallery-thumb-button-height: clamp(58px, calc(78px * var(--gallery-scale)), 112px);
+  --gallery-thumb-width: calc(var(--gallery-thumb-button-width) - clamp(4px, calc(4px * var(--gallery-scale)), 8px));
+  --gallery-thumb-height: calc(var(--gallery-thumb-button-height) - clamp(4px, calc(4px * var(--gallery-scale)), 8px));
+  --gallery-strip-padding: clamp(6px, calc(8px * var(--gallery-scale)), 12px);
+  --gallery-main-max-height: clamp(220px, calc(72vw * var(--gallery-scale)), calc(680px * var(--gallery-scale)));
+  --gallery-strip-gap: var(--gallery-gap);
+  --gallery-strip-image-height: clamp(132px, calc(220px * var(--gallery-scale)), 300px);
+  margin: calc(24px * var(--gallery-scale)) 0;
   padding: 0;
   border-radius: 10px;
   background: transparent;
@@ -20,7 +32,8 @@
 
 .GalleryNode__mainImage {
   width: 100%;
-  height: min(680px, 72vw);
+  height: auto;
+  max-height: var(--gallery-main-max-height);
   object-fit: contain;
   border-radius: 12px;
   display: block;
@@ -28,16 +41,16 @@
 }
 
 .GalleryNode__thumbnails {
-  margin-top: 14px;
+  margin-top: calc(14px * var(--gallery-scale));
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--gallery-gap);
   justify-content: center;
 }
 
 .GalleryNode__arrow {
-  width: 44px;
-  height: 44px;
+  width: var(--gallery-arrow-size);
+  height: var(--gallery-arrow-size);
   border: 0;
   border-radius: 50%;
   background: transparent;
@@ -47,7 +60,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 26px;
+  font-size: var(--gallery-arrow-font-size);
   line-height: 1;
   padding: 0;
   transition: color 0.2s ease, transform 0.15s ease;
@@ -75,15 +88,14 @@
 }
 
 .GalleryNode__thumbStrip {
-  max-width: 760px;
   width: 100%;
   overflow-x: auto;
   overflow-y: hidden;
   display: flex;
-  gap: 12px;
+  gap: var(--gallery-gap);
   border: 1px solid #e6e6e6;
   border-radius: 12px;
-  padding: 8px;
+  padding: var(--gallery-strip-padding);
   scrollbar-width: thin;
   scrollbar-color: #8ea0af transparent;
   scrollbar-gutter: stable;
@@ -109,8 +121,8 @@
   border-radius: 10px;
   background: none;
   padding: 0;
-  width: 132px;
-  height: 78px;
+  width: var(--gallery-thumb-button-width);
+  height: var(--gallery-thumb-button-height);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -131,8 +143,8 @@
 }
 
 .GalleryNode__thumbnail {
-  width: 128px;
-  height: 74px;
+  width: var(--gallery-thumb-width);
+  height: var(--gallery-thumb-height);
   object-fit: contain;
   border-radius: 6px;
   background: none;
@@ -159,18 +171,46 @@
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
-  gap: 12px;
+  gap: var(--gallery-gap);
 }
 
 .GalleryNode__slideshowArrow {
   align-self: center;
 }
 
+.GalleryNode__slideshowDots {
+  margin-top: calc(12px * var(--gallery-scale));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(6px, calc(8px * var(--gallery-scale)), 12px);
+}
+
+.GalleryNode__slideshowDot {
+  width: clamp(8px, calc(10px * var(--gallery-scale)), 12px);
+  height: clamp(8px, calc(10px * var(--gallery-scale)), 12px);
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: #b7bec6;
+  cursor: pointer;
+  transition: transform 0.15s ease, background-color 0.2s ease;
+}
+
+.GalleryNode__slideshowDot:hover {
+  background: #8c949d;
+}
+
+.GalleryNode__slideshowDotActive {
+  background: #111;
+  transform: scale(1.35);
+}
+
 .GalleryNode__carousel {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
-  gap: 12px;
+  gap: var(--gallery-strip-gap);
 }
 
 .GalleryNode__carouselViewport {
@@ -182,14 +222,15 @@
 
 .GalleryNode__carouselTrack {
   display: flex;
-  gap: 12px;
-  align-items: stretch;
+  gap: var(--gallery-strip-gap);
+  align-items: center;
   scroll-snap-type: x proximity;
 }
 
 .GalleryNode__carouselImage {
-  width: clamp(220px, 32vw, 320px);
-  height: clamp(160px, 22vw, 220px);
+  width: auto;
+  height: var(--gallery-strip-image-height);
+  max-width: none;
   object-fit: contain;
   border-radius: 12px;
   background: none;
@@ -218,46 +259,10 @@
 
 @media (max-width: 640px) {
   .GalleryNode__container {
-    margin: 14px 0;
-  }
-
-  .GalleryNode__arrow {
-    width: 34px;
-    height: 34px;
-    font-size: 22px;
-  }
-
-  .GalleryNode__thumbnails {
-    gap: 8px;
-  }
-
-  .GalleryNode__slideshow,
-  .GalleryNode__carousel {
-    gap: 8px;
-  }
-
-  .GalleryNode__thumbStrip {
-    max-width: 100%;
-    gap: 8px;
-  }
-
-  .GalleryNode__thumbButton {
-    width: 104px;
-    height: 62px;
-  }
-
-  .GalleryNode__thumbnail {
-    width: 100px;
-    height: 58px;
-  }
-
-  .GalleryNode__mainImage {
-    height: min(460px, 80vw);
-  }
-
-  .GalleryNode__carouselImage {
-    width: 72vw;
-    height: 44vw;
+    --gallery-gap: clamp(6px, calc(8px * var(--gallery-scale)), 14px);
+    --gallery-main-max-height: clamp(180px, calc(80vw * var(--gallery-scale)), calc(460px * var(--gallery-scale)));
+    --gallery-strip-image-height: clamp(110px, calc(44vw * var(--gallery-scale)), calc(220px * var(--gallery-scale)));
+    margin: calc(14px * var(--gallery-scale)) 0;
   }
 
   .GalleryNode__editButton {

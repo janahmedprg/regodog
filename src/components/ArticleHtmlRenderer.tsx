@@ -2,8 +2,13 @@ import React, { useEffect, useRef } from "react";
 import { createRoot, Root } from "react-dom/client";
 import {
   DEFAULT_GALLERY_SIZE,
+  DEFAULT_GALLERY_STRIP_GAP,
+  DEFAULT_GALLERY_STRIP_HEIGHT,
   DEFAULT_GALLERY_STYLE,
+  getGalleryScale,
   normalizeGallerySize,
+  normalizeGalleryStripGap,
+  normalizeGalleryStripHeight,
   normalizeGalleryStyle,
   type GalleryStyle,
 } from "../editor/nodes/GalleryNode";
@@ -24,6 +29,8 @@ function getGalleryPayload(galleryElement: HTMLElement): {
   activeIndex: number;
   style: GalleryStyle;
   size: number;
+  stripGap: number;
+  stripHeight: number;
 } | null {
   const rawPayload = galleryElement.getAttribute("data-lexical-gallery");
   if (rawPayload) {
@@ -33,6 +40,8 @@ function getGalleryPayload(galleryElement: HTMLElement): {
         activeIndex?: number;
         style?: GalleryStyle;
         size?: number;
+        stripGap?: number;
+        stripHeight?: number;
       };
       if (Array.isArray(parsed.images)) {
         const normalized = parsed.images
@@ -64,6 +73,14 @@ function getGalleryPayload(galleryElement: HTMLElement): {
           size: normalizeGallerySize(
             parsed.size ?? galleryElement.getAttribute("data-gallery-size"),
           ),
+          stripGap: normalizeGalleryStripGap(
+            parsed.stripGap ??
+              galleryElement.getAttribute("data-gallery-strip-gap"),
+          ),
+          stripHeight: normalizeGalleryStripHeight(
+            parsed.stripHeight ??
+              galleryElement.getAttribute("data-gallery-strip-height"),
+          ),
         };
       }
     } catch {
@@ -86,6 +103,8 @@ function getGalleryPayload(galleryElement: HTMLElement): {
       activeIndex: 0,
       style: DEFAULT_GALLERY_STYLE,
       size: DEFAULT_GALLERY_SIZE,
+      stripGap: DEFAULT_GALLERY_STRIP_GAP,
+      stripHeight: DEFAULT_GALLERY_STRIP_HEIGHT,
     };
   }
 
@@ -99,6 +118,8 @@ function getGalleryPayload(galleryElement: HTMLElement): {
     activeIndex: 0,
     style: DEFAULT_GALLERY_STYLE,
     size: DEFAULT_GALLERY_SIZE,
+    stripGap: DEFAULT_GALLERY_STRIP_GAP,
+    stripHeight: DEFAULT_GALLERY_STRIP_HEIGHT,
   };
 }
 
@@ -141,6 +162,31 @@ const ArticleHtmlRenderer: React.FC<ArticleHtmlRendererProps> = ({ htmlContent }
       galleryElement.setAttribute("data-active-index", String(activeIndex));
       galleryElement.setAttribute("data-gallery-style", payload.style);
       galleryElement.setAttribute("data-gallery-size", String(payload.size));
+      galleryElement.setAttribute(
+        "data-gallery-strip-gap",
+        String(payload.stripGap),
+      );
+      galleryElement.setAttribute(
+        "data-gallery-strip-height",
+        String(payload.stripHeight),
+      );
+      galleryElement.style.setProperty(
+        "--gallery-scale",
+        String(getGalleryScale(payload.size)),
+      );
+      galleryElement.style.setProperty(
+        "--gallery-strip-gap",
+        `${payload.stripGap}px`,
+      );
+      galleryElement.style.setProperty(
+        "--gallery-strip-image-height",
+        `${payload.stripHeight}px`,
+      );
+      galleryElement.style.width = `min(${payload.size}%, calc(100vw - 32px))`;
+      galleryElement.style.maxWidth = "none";
+      galleryElement.style.position = "relative";
+      galleryElement.style.left = "50%";
+      galleryElement.style.transform = "translateX(-50%)";
 
       const root = createRoot(galleryElement);
       root.render(
@@ -149,6 +195,8 @@ const ArticleHtmlRenderer: React.FC<ArticleHtmlRendererProps> = ({ htmlContent }
           initialActiveIndex={activeIndex}
           style={payload.style}
           size={payload.size}
+          stripGap={payload.stripGap}
+          stripHeight={payload.stripHeight}
         />,
       );
       galleryRoots.push(root);

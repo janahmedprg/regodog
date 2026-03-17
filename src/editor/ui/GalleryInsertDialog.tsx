@@ -17,11 +17,15 @@ import Select from './Select';
 import TextInput from './TextInput';
 import {
   DEFAULT_GALLERY_SIZE,
+  DEFAULT_GALLERY_STRIP_GAP,
+  DEFAULT_GALLERY_STRIP_HEIGHT,
   DEFAULT_GALLERY_STYLE,
   GalleryImage,
   GalleryStyle,
   GALLERY_STYLES,
   normalizeGallerySize,
+  normalizeGalleryStripGap,
+  normalizeGalleryStripHeight,
   normalizeGalleryStyle,
 } from '../nodes/GalleryNode';
 import '../plugins/GalleryPlugin/GalleryPlugin.css';
@@ -102,6 +106,8 @@ export default function InsertGalleryDialog({
   initialImages,
   initialStyle,
   initialSize,
+  initialStripGap,
+  initialStripHeight,
   submitButtonText,
   title,
 }: {
@@ -111,10 +117,14 @@ export default function InsertGalleryDialog({
     images: GalleryImage[];
     style: GalleryStyle;
     size: number;
+    stripGap: number;
+    stripHeight: number;
   }) => void;
   initialImages?: readonly GalleryImage[];
   initialStyle?: GalleryStyle;
   initialSize?: number;
+  initialStripGap?: number;
+  initialStripHeight?: number;
   submitButtonText?: string;
   title?: string;
 }): JSX.Element {
@@ -127,6 +137,18 @@ export default function InsertGalleryDialog({
   );
   const [sizeValue, setSizeValue] = useState<string>(() =>
     String(normalizeGallerySize(initialSize ?? DEFAULT_GALLERY_SIZE)),
+  );
+  const [stripGapValue, setStripGapValue] = useState<string>(() =>
+    String(
+      normalizeGalleryStripGap(initialStripGap ?? DEFAULT_GALLERY_STRIP_GAP),
+    ),
+  );
+  const [stripHeightValue, setStripHeightValue] = useState<string>(() =>
+    String(
+      normalizeGalleryStripHeight(
+        initialStripHeight ?? DEFAULT_GALLERY_STRIP_HEIGHT,
+      ),
+    ),
   );
   const [isUploading, setIsUploading] = useState(false);
   const images = useMemo(
@@ -144,7 +166,13 @@ export default function InsertGalleryDialog({
       return;
     }
 
-    onSubmit({images, style, size: normalizeGallerySize(sizeValue)});
+    onSubmit({
+      images,
+      style,
+      size: normalizeGallerySize(sizeValue),
+      stripGap: normalizeGalleryStripGap(stripGapValue),
+      stripHeight: normalizeGalleryStripHeight(stripHeightValue),
+    });
     onClose();
   };
 
@@ -292,9 +320,29 @@ export default function InsertGalleryDialog({
         type="number"
         value={sizeValue}
         onChange={setSizeValue}
-        placeholder="100"
+        placeholder="100 (25-160)"
         data-test-id="gallery-size-input"
       />
+      {style === GALLERY_STYLES.STRIP && (
+        <>
+          <TextInput
+            label="Strip gap (px)"
+            type="number"
+            value={stripGapValue}
+            onChange={setStripGapValue}
+            placeholder="12 (0-48)"
+            data-test-id="gallery-strip-gap-input"
+          />
+          <TextInput
+            label="Strip height (px)"
+            type="number"
+            value={stripHeightValue}
+            onChange={setStripHeightValue}
+            placeholder="220 (120-420)"
+            data-test-id="gallery-strip-height-input"
+          />
+        </>
+      )}
       <textarea
         value={value}
         onChange={(event) => setValue(event.target.value)}

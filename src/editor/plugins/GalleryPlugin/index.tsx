@@ -35,6 +35,8 @@ export type InsertGalleryPayload = Readonly<{
   images: readonly GalleryImage[];
   style: GalleryStyle;
   size: number;
+  stripGap: number;
+  stripHeight: number;
 }>;
 
 export const INSERT_GALLERY_COMMAND: LexicalCommand<InsertGalleryPayload> =
@@ -57,6 +59,8 @@ export default function GalleryPlugin(): JSX.Element | null {
             0,
             payload.style,
             payload.size,
+            payload.stripGap,
+            payload.stripHeight,
           );
           $insertNodes([galleryNode]);
           if ($isRootOrShadowRoot(galleryNode.getParentOrThrow())) {
@@ -89,6 +93,8 @@ export function InsertGalleryDialog({
     images: GalleryImage[];
     style: GalleryStyle;
     size: number;
+    stripGap: number;
+    stripHeight: number;
   }) => void;
   initialImages?: readonly GalleryImage[];
   initialStyle?: GalleryStyle;
@@ -106,6 +112,8 @@ export function InsertGalleryDialog({
           images: GalleryImage[];
           style: GalleryStyle;
           size: number;
+          stripGap: number;
+          stripHeight: number;
         }) => {
           activeEditor.dispatchCommand(INSERT_GALLERY_COMMAND, payload);
         })

@@ -30,10 +30,14 @@ import {
   DEFAULT_GALLERY_STYLE,
   GalleryImage,
   GalleryStyle,
+  getGalleryScale,
   GALLERY_STYLES,
   normalizeGallerySize,
+  normalizeGalleryStripGap,
+  normalizeGalleryStripHeight,
   normalizeGalleryStyle,
 } from './GalleryNode';
+import type {CSSProperties} from 'react';
 
 function clamp(value: number, min: number, max: number): number {
   if (value < min) {
@@ -85,17 +89,67 @@ function useGalleryScrollState(containerRef: RefObject<HTMLElement | null>) {
   };
 }
 
+function getGallerySizingStyle(gallerySize: number) {
+  return {
+    '--gallery-scale': String(getGalleryScale(gallerySize)),
+    width: `min(${gallerySize}%, calc(100vw - 32px))`,
+    maxWidth: 'none',
+    position: 'relative' as const,
+    left: '50%',
+    transform: 'translateX(-50%)',
+  };
+}
+
+function getGalleryStripStyle(stripGap: number, stripHeight: number) {
+  return {
+    '--gallery-strip-gap': `${normalizeGalleryStripGap(stripGap)}px`,
+    '--gallery-strip-image-height': `${normalizeGalleryStripHeight(stripHeight)}px`,
+  } as CSSProperties;
+}
+
+function renderSlideshowDots(
+  images: GalleryImage[],
+  activeIndex: number,
+  onSelect: (index: number) => void,
+) {
+  return (
+    <div className="GalleryNode__slideshowDots" aria-label="Slideshow position">
+      {images.map((image, index) => {
+        const isActive = index === activeIndex;
+
+        return (
+          <button
+            key={`${image.src}-${index}-dot`}
+            className={joinClasses(
+              'GalleryNode__slideshowDot',
+              isActive && 'GalleryNode__slideshowDotActive',
+            )}
+            type="button"
+            onClick={() => onSelect(index)}
+            aria-label={`Show image ${index + 1}`}
+            aria-current={isActive ? 'true' : undefined}
+          />
+        );
+      })}
+    </div>
+  );
+}
+
 export default function GalleryComponent({
   images,
   activeIndex,
   style,
   size,
+  stripGap,
+  stripHeight,
   nodeKey,
 }: {
   activeIndex: number;
   images: GalleryImage[];
   style: GalleryStyle;
   size: number;
+  stripGap: number;
+  stripHeight: number;
   nodeKey: NodeKey;
 }): JSX.Element {
   const [editor] = useLexicalComposerContext();
@@ -111,6 +165,8 @@ export default function GalleryComponent({
   );
   const galleryStyle = normalizeGalleryStyle(style ?? DEFAULT_GALLERY_STYLE);
   const gallerySize = normalizeGallerySize(size ?? DEFAULT_GALLERY_SIZE);
+  const gallerySizingStyle = getGallerySizingStyle(gallerySize);
+  const galleryStripStyle = getGalleryStripStyle(stripGap, stripHeight);
   const currentImage = images[normalizedActiveIndex];
 
   const {canScrollLeft, canScrollRight, refresh} =
@@ -156,10 +212,14 @@ export default function GalleryComponent({
     images: nextImages,
     style: nextStyle,
     size: nextSize,
+    stripGap: nextStripGap,
+    stripHeight: nextStripHeight,
   }: {
     images: GalleryImage[];
     style: GalleryStyle;
     size: number;
+    stripGap: number;
+    stripHeight: number;
   }) => {
     editor.update(() => {
       const node = $getNodeByKey(nodeKey);
@@ -168,7 +228,14 @@ export default function GalleryComponent({
       }
       const activeGalleryIndex = node.getActiveIndex();
       node.replace(
-        $createGalleryNode(nextImages, activeGalleryIndex, nextStyle, nextSize),
+        $createGalleryNode(
+          nextImages,
+          activeGalleryIndex,
+          nextStyle,
+          nextSize,
+          nextStripGap,
+          nextStripHeight,
+        ),
       );
     });
   };
@@ -178,7 +245,10 @@ export default function GalleryComponent({
     if (!strip) {
       return;
     }
-    const offset = direction === 'left' ? -192 : 192;
+    const offset =
+      direction === 'left'
+        ? -(strip.clientWidth || 192)
+        : strip.clientWidth || 192;
     strip.scrollBy({left: offset, behavior: 'smooth'});
   };
 
@@ -188,8 +258,8 @@ export default function GalleryComponent({
     }
     const nextIndex =
       direction === 'left'
-        ? Math.max(0, normalizedActiveIndex - 1)
-        : Math.min(images.length - 1, normalizedActiveIndex + 1);
+        ? (normalizedActiveIndex - 1 + images.length) % images.length
+        : (normalizedActiveIndex + 1) % images.length;
     activateImage(nextIndex);
   };
 
@@ -208,12 +278,7 @@ export default function GalleryComponent({
       )}
       data-gallery-style={galleryStyle}
       data-gallery-size={gallerySize}
-      style={{
-        width: `${gallerySize}%`,
-        maxWidth: '100%',
-        marginLeft: 'auto',
-        marginRight: 'auto',
-      }}
+      style={gallerySizingStyle}
       ref={containerRef}
     >
       {galleryStyle === GALLERY_STYLES.STRIP ? (
@@ -229,7 +294,7 @@ export default function GalleryComponent({
             ‹
           </button>
           <div className="GalleryNode__carouselViewport" ref={stripRef}>
-            <div className="GalleryNode__carouselTrack">
+            <div className="GalleryNode__carouselTrack" style={galleryStripStyle}>
               {images.map((image, index) => (
                 <img
                   key={`${image.src}-${index}`}
@@ -252,34 +317,35 @@ export default function GalleryComponent({
           </button>
         </div>
       ) : galleryStyle === GALLERY_STYLES.SLIDESHOW ? (
-        <div className="GalleryNode__slideshow">
-          <button
-            className="GalleryNode__arrow GalleryNode__slideshowArrow"
-            data-direction="left"
-            disabled={normalizedActiveIndex === 0}
-            type="button"
-            onClick={() => moveActiveImage('left')}
-            aria-label="Show previous image"
-          >
-            ‹
-          </button>
-          <div className="GalleryNode__main">
-            <img
-              className="GalleryNode__mainImage"
-              src={currentImage.src}
-              alt={currentImage.altText || `Gallery image ${normalizedActiveIndex + 1}`}
-            />
+        <div>
+          <div className="GalleryNode__slideshow">
+            <button
+              className="GalleryNode__arrow GalleryNode__slideshowArrow"
+              data-direction="left"
+              type="button"
+              onClick={() => moveActiveImage('left')}
+              aria-label="Show previous image"
+            >
+              ‹
+            </button>
+            <div className="GalleryNode__main">
+              <img
+                className="GalleryNode__mainImage"
+                src={currentImage.src}
+                alt={currentImage.altText || `Gallery image ${normalizedActiveIndex + 1}`}
+              />
+            </div>
+            <button
+              className="GalleryNode__arrow GalleryNode__slideshowArrow"
+              data-direction="right"
+              type="button"
+              onClick={() => moveActiveImage('right')}
+              aria-label="Show next image"
+            >
+              ›
+            </button>
           </div>
-          <button
-            className="GalleryNode__arrow GalleryNode__slideshowArrow"
-            data-direction="right"
-            disabled={normalizedActiveIndex === images.length - 1}
-            type="button"
-            onClick={() => moveActiveImage('right')}
-            aria-label="Show next image"
-          >
-            ›
-          </button>
+          {renderSlideshowDots(images, normalizedActiveIndex, activateImage)}
         </div>
       ) : (
         <>
@@ -350,6 +416,8 @@ export default function GalleryComponent({
                 initialImages={images}
                 initialStyle={galleryStyle}
                 initialSize={gallerySize}
+                initialStripGap={normalizeGalleryStripGap(stripGap)}
+                initialStripHeight={normalizeGalleryStripHeight(stripHeight)}
                 submitButtonText="Update Gallery"
                 onSubmit={replaceGallery}
               />
