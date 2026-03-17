@@ -6,15 +6,15 @@
  *
  */
 
-import type {LexicalEditor} from 'lexical';
-import type {JSX} from 'react';
+import type { LexicalEditor } from "lexical";
+import type { JSX } from "react";
 
-import {type ChangeEvent, useMemo, useState} from 'react';
+import { type ChangeEvent, useMemo, useState } from "react";
 
-import Button from './Button';
-import {DialogActions} from './Dialog';
-import Select from './Select';
-import TextInput from './TextInput';
+import Button from "./Button";
+import { DialogActions } from "./Dialog";
+import Select from "./Select";
+import TextInput from "./TextInput";
 import {
   DEFAULT_GALLERY_SIZE,
   DEFAULT_GALLERY_STRIP_GAP,
@@ -27,21 +27,21 @@ import {
   normalizeGalleryStripGap,
   normalizeGalleryStripHeight,
   normalizeGalleryStyle,
-} from '../nodes/GalleryNode';
-import '../plugins/GalleryPlugin/GalleryPlugin.css';
+} from "../nodes/GalleryNode";
+import "../plugins/GalleryPlugin/GalleryPlugin.css";
 
 function parseGalleryText(value: string): GalleryImage[] {
   return value
-    .split('\n')
+    .split("\n")
     .map((entry) => entry.trim())
     .filter((entry) => entry.length > 0)
     .map((entry, idx) => {
-      const [srcValue, ...altParts] = entry.split('|');
+      const [srcValue, ...altParts] = entry.split("|");
       const src = srcValue.trim();
       if (!src) {
         return null;
       }
-      const altText = altParts.join('|').trim();
+      const altText = altParts.join("|").trim();
       return {
         src,
         altText: altText || `Image ${idx + 1}`,
@@ -56,13 +56,13 @@ function updateUploadedImageAlt(
   altText: string,
 ): GalleryImage[] {
   return images.map((image, imageIndex) =>
-    imageIndex === index ? {...image, altText} : image,
+    imageIndex === index ? { ...image, altText } : image,
   );
 }
 
 function readImagesFromFiles(files: FileList): Promise<GalleryImage[]> {
   const imageFiles = Array.from(files).filter((file) =>
-    file.type.startsWith('image/'),
+    file.type.startsWith("image/"),
   );
   if (imageFiles.length === 0) {
     return Promise.resolve([]);
@@ -74,8 +74,8 @@ function readImagesFromFiles(files: FileList): Promise<GalleryImage[]> {
       reader.readAsDataURL(file);
       reader.onload = () => {
         resolve({
-          src: String(reader.result || ''),
-          altText: file.name.replace(/\.[^.]+$/, '') || 'Uploaded image',
+          src: String(reader.result || ""),
+          altText: file.name.replace(/\.[^.]+$/, "") || "Uploaded image",
         });
       };
       reader.onerror = () => {
@@ -86,7 +86,11 @@ function readImagesFromFiles(files: FileList): Promise<GalleryImage[]> {
   return Promise.all(imageFiles.map(readAsDataUrl));
 }
 
-function moveImage(images: GalleryImage[], from: number, to: number): GalleryImage[] {
+function moveImage(
+  images: GalleryImage[],
+  from: number,
+  to: number,
+): GalleryImage[] {
   if (from === to || from < 0 || to < 0) {
     return images;
   }
@@ -128,10 +132,10 @@ export default function InsertGalleryDialog({
   submitButtonText?: string;
   title?: string;
 }): JSX.Element {
-  const [value, setValue] = useState('');
-  const [uploadedImages, setUploadedImages] = useState<GalleryImage[]>(() =>
-    [...(initialImages || [])],
-  );
+  const [value, setValue] = useState("");
+  const [uploadedImages, setUploadedImages] = useState<GalleryImage[]>(() => [
+    ...(initialImages || []),
+  ]);
   const [style, setStyle] = useState<GalleryStyle>(
     normalizeGalleryStyle(initialStyle ?? DEFAULT_GALLERY_STYLE),
   );
@@ -159,7 +163,7 @@ export default function InsertGalleryDialog({
 
   const confirmLabel = submitButtonText
     ? submitButtonText
-    : `Insert Gallery (${images.length} image${images.length === 1 ? '' : 's'})`;
+    : `Insert Gallery (${images.length} image${images.length === 1 ? "" : "s"})`;
 
   const onClick = () => {
     if (!canInsert) {
@@ -177,7 +181,7 @@ export default function InsertGalleryDialog({
   };
 
   const onUpload = async (event: ChangeEvent<HTMLInputElement>) => {
-    const {files} = event.target;
+    const { files } = event.target;
     if (!files || files.length === 0) {
       return;
     }
@@ -188,7 +192,7 @@ export default function InsertGalleryDialog({
       setUploadedImages((prev) => [...prev, ...nextImages]);
     } finally {
       setIsUploading(false);
-      event.target.value = '';
+      event.target.value = "";
     }
   };
 
@@ -197,15 +201,16 @@ export default function InsertGalleryDialog({
   };
 
   const removeUploadedImage = (index: number) => {
-    setUploadedImages((prev) => prev.filter((_, imageIndex) => imageIndex !== index));
+    setUploadedImages((prev) =>
+      prev.filter((_, imageIndex) => imageIndex !== index),
+    );
   };
 
   return (
     <div className="GalleryPlugin__scrollArea">
       {title && <p style={{ marginTop: 10, marginBottom: 8 }}>{title}</p>}
       <p style={{ marginTop: 10, marginBottom: 8 }}>
-        Paste one image per line. Optional alt text can be added with
-        &nbsp;
+        Paste one image per line. Optional alt text can be added with &nbsp;
         <code>imageUrl|alt text</code>.
       </p>
       <label className="Input__label" htmlFor="gallery-upload">
@@ -218,7 +223,7 @@ export default function InsertGalleryDialog({
         multiple
         onChange={onUpload}
         disabled={isUploading}
-        style={{ width: '100%' }}
+        style={{ width: "100%" }}
       />
       {uploadedImages.length > 0 && (
         <div style={{ marginTop: 8 }}>
@@ -226,14 +231,14 @@ export default function InsertGalleryDialog({
             <div
               key={`${image.src}-${index}`}
               style={{
-                display: 'flex',
-                gap: '8px',
-                alignItems: 'center',
-                marginBottom: '6px',
-                padding: '4px 6px',
-                border: '1px solid #e1e5eb',
-                borderRadius: '6px',
-                backgroundColor: '#fff',
+                display: "flex",
+                gap: "8px",
+                alignItems: "center",
+                marginBottom: "6px",
+                padding: "4px 6px",
+                border: "1px solid #e1e5eb",
+                borderRadius: "6px",
+                backgroundColor: "#fff",
               }}
               className="GalleryPlugin__uploadRow"
             >
@@ -241,10 +246,10 @@ export default function InsertGalleryDialog({
                 src={image.src}
                 alt={image.altText || `Uploaded image ${index + 1}`}
                 style={{
-                  width: '48px',
-                  height: '48px',
-                  objectFit: 'cover',
-                  borderRadius: '4px',
+                  width: "48px",
+                  height: "48px",
+                  objectFit: "cover",
+                  borderRadius: "4px",
                   flexShrink: 0,
                 }}
               />
@@ -252,7 +257,7 @@ export default function InsertGalleryDialog({
                 type="text"
                 value={image.altText}
                 onChange={(event) => {
-                  const {value} = event.target;
+                  const { value } = event.target;
                   setUploadedImages((prev) =>
                     updateUploadedImageAlt(prev, index, value),
                   );
@@ -261,13 +266,16 @@ export default function InsertGalleryDialog({
                 aria-label={`Alt text for uploaded image ${index + 1}`}
                 style={{
                   flex: 1,
-                  padding: '6px 8px',
-                  border: '1px solid #cfd6de',
-                  borderRadius: '4px',
-                  width: '100%',
+                  padding: "6px 8px",
+                  border: "1px solid #cfd6de",
+                  borderRadius: "4px",
+                  width: "100%",
                 }}
               />
-              <div className="GalleryPlugin__moveButtons" style={{ display: 'flex', gap: '4px' }}>
+              <div
+                className="GalleryPlugin__moveButtons"
+                style={{ display: "flex", gap: "4px" }}
+              >
                 <button
                   type="button"
                   onClick={() => moveUploadedImage(index, index - 1)}
@@ -300,23 +308,26 @@ export default function InsertGalleryDialog({
       {uploadedImages.length > 0 && (
         <p style={{ marginTop: 8, marginBottom: 0 }}>
           Uploaded {uploadedImages.length} image
-          {uploadedImages.length === 1 ? '' : 's'} added.
+          {uploadedImages.length === 1 ? "" : "s"} added.
         </p>
       )}
-      <div style={{marginTop: 12}}>
+      <div style={{ marginTop: 12 }}>
         <Select
           label="Gallery style"
           value={style}
           onChange={(event) =>
             setStyle(normalizeGalleryStyle(event.target.value))
-          }>
+          }
+        >
           <option value={GALLERY_STYLES.DEFAULT}>Default</option>
           <option value={GALLERY_STYLES.STRIP}>Horizontal strip</option>
-          <option value={GALLERY_STYLES.SLIDESHOW}>Single image slideshow</option>
+          <option value={GALLERY_STYLES.SLIDESHOW}>
+            Single image slideshow
+          </option>
         </Select>
       </div>
       <TextInput
-        label="Gallery width (%)"
+        label="Gallery width (25-160) (%)"
         type="number"
         value={sizeValue}
         onChange={setSizeValue}
@@ -326,7 +337,7 @@ export default function InsertGalleryDialog({
       {style === GALLERY_STYLES.STRIP && (
         <>
           <TextInput
-            label="Strip gap (px)"
+            label="Strip gap (0-48) (px)"
             type="number"
             value={stripGapValue}
             onChange={setStripGapValue}
@@ -334,7 +345,7 @@ export default function InsertGalleryDialog({
             data-test-id="gallery-strip-gap-input"
           />
           <TextInput
-            label="Strip height (px)"
+            label="Strip height (120-420) (px)"
             type="number"
             value={stripHeightValue}
             onChange={setStripHeightValue}
@@ -348,12 +359,12 @@ export default function InsertGalleryDialog({
         onChange={(event) => setValue(event.target.value)}
         placeholder="https://example.com/hero.jpg|Hero image\nhttps://example.com/detail.jpg|Detail image"
         style={{
-          width: '100%',
-          minHeight: '120px',
-          marginTop: '4px',
-          padding: '8px',
-          boxSizing: 'border-box',
-          resize: 'vertical',
+          width: "100%",
+          minHeight: "120px",
+          marginTop: "4px",
+          padding: "8px",
+          boxSizing: "border-box",
+          resize: "vertical",
         }}
         data-test-id="gallery-modal-textarea"
       />
