@@ -117,3 +117,28 @@ On publish/update, the editor pipeline:
   - copies `dist/client` and `dist/server` into function deployment package
   - installs function dependencies and builds function code
 - Hosting rewrites all requests to `ssrApp` (region `us-central1`) for SSR response generation.
+
+## Google Indexing API Batch Script
+
+This repo includes a sitemap-driven batch submission script at [`scripts/submitIndexingBatch.ts`](/home/janahmed/Desktop/code/regodog/scripts/submitIndexingBatch.ts).
+
+Before using it, create a Google service account with Indexing API access and provide credentials through one of these environment variables:
+
+- `GOOGLE_SERVICE_ACCOUNT_KEY_PATH=/absolute/or/relative/path/to/service-account.json`
+- `GOOGLE_SERVICE_ACCOUNT_JSON='{"client_email":"...","private_key":"..."}'`
+
+Example usage:
+
+```bash
+npm run build
+npm run indexing:batch -- --dry-run
+npm run indexing:batch -- --type updated
+npm run indexing:batch -- --type updated --limit 50
+npm run indexing:batch -- --type deleted --start-at 100 --batch-size 25
+```
+
+Notes:
+
+- The script reads `dist/client/sitemap.xml` by default. Override it with `--sitemap path/to/sitemap.xml`.
+- Google documents that batch requests can include up to 100 URLs, and this script enforces that limit.
+- Google’s Indexing API is officially intended for `JobPosting` and livestream `BroadcastEvent` pages. Review Google’s current eligibility requirements before sending large batches.
