@@ -353,6 +353,10 @@ async function main(): Promise<void> {
   console.log(
     `Loaded ${sitemapUrls.length} URLs from ${sitemapPath}. Selected ${limitedUrls.length} URLs starting at index ${options.startAt}.`,
   );
+  console.log("URLs selected for batch indexing:");
+  limitedUrls.forEach((url, index) => {
+    console.log(`  ${index + 1}. ${url}`);
+  });
 
   const batches = createBatches(limitedUrls, options.batchSize);
 
